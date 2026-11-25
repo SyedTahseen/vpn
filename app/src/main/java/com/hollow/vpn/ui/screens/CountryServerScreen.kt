@@ -1,14 +1,21 @@
 package com.hollow.vpn.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -73,9 +81,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hollow.vpn.data.ServerEntity
 import com.hollow.vpn.data.ServerFilter
+import com.hollow.vpn.ui.components.HollowBlinkingDot
 import com.hollow.vpn.ui.components.HollowTopSquareButton
-import com.hollow.vpn.ui.components.HollowUnderlinedTabRow
+import com.hollow.vpn.ui.components.NothingDottedDivider
+import com.hollow.vpn.ui.components.NothingPillTabRow
+import com.hollow.vpn.ui.components.NothingSignalDots
 import com.hollow.vpn.ui.components.countryCodeToFlagEmoji
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
 import com.hollow.vpn.ui.theme.HollowCreamSurface
@@ -85,7 +97,22 @@ import com.hollow.vpn.ui.theme.HollowInkSecondary
 import com.hollow.vpn.ui.theme.HollowObsidianDivider
 import com.hollow.vpn.ui.theme.HollowOrange
 import com.hollow.vpn.ui.theme.JetBrainsMonoFamily
+import com.hollow.vpn.ui.theme.NothingBlack
+import com.hollow.vpn.ui.theme.NothingBorder
+import com.hollow.vpn.ui.theme.NothingCanvas
+import com.hollow.vpn.ui.theme.NothingCardSurface
+import com.hollow.vpn.ui.theme.NothingInvertedSurface
+import com.hollow.vpn.ui.theme.NothingMotion
+import com.hollow.vpn.ui.theme.NothingOnCanvas
+import com.hollow.vpn.ui.theme.NothingOnInvertedMuted
+import com.hollow.vpn.ui.theme.NothingOnInvertedSecondary
+import com.hollow.vpn.ui.theme.NothingOnInvertedSurface
+import com.hollow.vpn.ui.theme.NothingRed
+import com.hollow.vpn.ui.theme.NothingSurfaceElevated
+import com.hollow.vpn.ui.theme.NothingTopBtnBorder
+import com.hollow.vpn.ui.theme.NothingTopBtnFill
 import com.hollow.vpn.ui.theme.SpaceGroteskFamily
+import com.hollow.vpn.ui.theme.nothingPressScale
 
 @Composable
 fun CountryServerListScreen(
@@ -168,7 +195,7 @@ fun CountryServerListScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(HollowCream)
+            .background(NothingCanvas)
             .statusBarsPadding()
             .padding(bottom = bottomContentPadding)
     ) {
@@ -181,36 +208,41 @@ fun CountryServerListScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Page 4 Top Header: Title + subtitle on left, 3 square buttons on right
+            // Nothing OS Header: Doto ALL-CAPS SERVERS + monospace count on left, circular hairline action buttons on right
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Servers",
-                        fontFamily = SpaceGroteskFamily,
+                        text = "SERVERS",
+                        fontFamily = DotoDisplayFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 31.sp,
-                        letterSpacing = (-0.6).sp,
-                        color = HollowInk
+                        fontSize = 24.sp,
+                        letterSpacing = 0.9.sp,
+                        maxLines = 1,
+                        color = NothingOnCanvas
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "${displayedServers.size} nodes · ${rawGroups.size} countries",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp),
+                        text = "${displayedServers.size} NODES  ·  ${rawGroups.size} COUNTRIES",
+                        fontFamily = JetBrainsMonoFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 10.5.sp,
+                        letterSpacing = 1.2.sp,
                         color = HollowInkSecondary
                     )
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     HollowTopSquareButton(
-                        containerColor = HollowCreamSurface,
-                        contentColor = HollowInk,
+                        containerColor = NothingTopBtnFill,
+                        contentColor = NothingOnCanvas,
+                        borderColor = NothingTopBtnBorder,
                         contentDescription = "Test all saved servers",
                         onClick = onRepingAll,
                         modifier = Modifier.testTag("country_reping_all")
@@ -219,13 +251,14 @@ fun CountryServerListScreen(
                             imageVector = Icons.Outlined.Speed,
                             contentDescription = null,
                             tint = tint,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
 
                     HollowTopSquareButton(
-                        containerColor = HollowCreamSurface,
-                        contentColor = HollowInk,
+                        containerColor = NothingTopBtnFill,
+                        contentColor = NothingOnCanvas,
+                        borderColor = NothingTopBtnBorder,
                         contentDescription = "Add server",
                         onClick = onOpenAddServer,
                         modifier = Modifier.testTag("country_add")
@@ -240,8 +273,9 @@ fun CountryServerListScreen(
 
                     Box {
                         HollowTopSquareButton(
-                            containerColor = if (overflowMenuExpanded) HollowInk else HollowCreamSurface,
-                            contentColor = if (overflowMenuExpanded) HollowCream else HollowInk,
+                            containerColor = if (overflowMenuExpanded) NothingInvertedSurface else NothingTopBtnFill,
+                            contentColor = if (overflowMenuExpanded) NothingOnInvertedSurface else NothingOnCanvas,
+                            borderColor = if (overflowMenuExpanded) NothingInvertedSurface else NothingTopBtnBorder,
                             contentDescription = "More server actions",
                             onClick = { overflowMenuExpanded = true },
                             modifier = Modifier.testTag("country_more_menu")
@@ -254,19 +288,19 @@ fun CountryServerListScreen(
                             )
                         }
 
-                        // Page 7: Dark Overflow Action Menu
+                        // Page 7: Nothing Surface Overflow Action Menu
                         DropdownMenu(
                             expanded = overflowMenuExpanded,
                             onDismissRequest = { overflowMenuExpanded = false },
                             offset = DpOffset(x = 0.dp, y = 8.dp),
-                            containerColor = HollowInk,
+                            containerColor = NothingSurfaceElevated,
                             shape = RoundedCornerShape(18.dp),
                             modifier = Modifier.width(212.dp)
                         ) {
                             ServerOverflowMenuItem(
                                 icon = Icons.Outlined.Schedule,
                                 label = "Update all",
-                                color = HollowCream,
+                                color = HollowInk,
                                 onClick = {
                                     overflowMenuExpanded = false
                                     onRefresh()
@@ -275,7 +309,7 @@ fun CountryServerListScreen(
                             ServerOverflowMenuItem(
                                 icon = Icons.Outlined.CheckCircle,
                                 label = "Select several",
-                                color = HollowCream,
+                                color = HollowInk,
                                 onClick = {
                                     overflowMenuExpanded = false
                                     isSelectionMode = true
@@ -285,7 +319,7 @@ fun CountryServerListScreen(
                             ServerOverflowMenuItem(
                                 icon = Icons.Rounded.Tune,
                                 label = "Sort by test results",
-                                color = HollowCream,
+                                color = HollowInk,
                                 onClick = {
                                     overflowMenuExpanded = false
                                     sortByPingResults = true
@@ -294,7 +328,7 @@ fun CountryServerListScreen(
                             )
                             HorizontalDivider(
                                 thickness = 1.dp,
-                                color = HollowObsidianDivider,
+                                color = NothingBorder,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
                             ServerOverflowMenuItem(
@@ -318,7 +352,7 @@ fun CountryServerListScreen(
                             ServerOverflowMenuItem(
                                 icon = Icons.Outlined.FileUpload,
                                 label = "Export all",
-                                color = HollowCream,
+                                color = HollowInk,
                                 onClick = {
                                     overflowMenuExpanded = false
                                     onExportAllServers()
@@ -338,16 +372,15 @@ fun CountryServerListScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Page 4 Underlined Filter Tabs (Fastest, All, Low ping, Custom)
-            HollowUnderlinedTabRow(
+            // Nothing OS Pill Filter Chips (FASTEST, ALL, LOW PING, CUSTOM)
+            NothingPillTabRow(
                 tabs = tabs.map { it.second },
                 selectedIndex = selectedTabIndex,
                 onSelectTab = { idx -> onSelectFilter(tabs[idx].first) },
                 tabTestTags = tabs.map { "country_filter_${it.first.name.lowercase()}" },
-                tabFontSize = 14.sp,
-                tabSpacing = 20.dp
+                fontSizeSp = 10.5f
             )
 
             if (activeProtocolPreference != "Auto (V2Ray)") {
@@ -385,7 +418,8 @@ fun CountryServerListScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = HollowInk
+                    color = NothingSurfaceElevated,
+                    border = BorderStroke(1.dp, NothingBorder)
                 ) {
                     Row(
                         modifier = Modifier
@@ -397,7 +431,7 @@ fun CountryServerListScreen(
                         Text(
                             text = "${selectedIds.size} selected",
                             style = MaterialTheme.typography.titleSmall,
-                            color = HollowCream
+                            color = HollowInk
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(
@@ -406,7 +440,7 @@ fun CountryServerListScreen(
                                     selectedIds = emptySet()
                                 }
                             ) {
-                                Text("Cancel", color = HollowCream.copy(alpha = 0.78f))
+                                Text("Cancel", color = HollowInkSecondary)
                             }
                             Button(
                                 onClick = {
@@ -431,91 +465,127 @@ fun CountryServerListScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            AnimatedContent(
+                targetState = selectedFilter,
+                transitionSpec = {
+                    val ease = NothingMotion.FluidEase
+                    val fromIdx = tabs.indexOfFirst { it.first == initialState }.coerceAtLeast(0)
+                    val toIdx = tabs.indexOfFirst { it.first == targetState }.coerceAtLeast(0)
+                    val dir = if (toIdx >= fromIdx) 1 else -1
+                    (slideInHorizontally(tween(240, easing = ease)) { dir * (it * 0.10f).toInt() } +
+                        fadeIn(tween(200, easing = ease)))
+                        .togetherWith(
+                            slideOutHorizontally(tween(200, easing = ease)) { -dir * (it * 0.08f).toInt() } +
+                                fadeOut(tween(150))
+                        )
+                },
+                modifier = Modifier.weight(1f),
+                label = "server_filter_tab_motion"
+            ) { activeFilter ->
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .testTag("server_lazy_column"),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                val isFastestTab = selectedFilter == ServerFilter.FASTEST
-                val isCustomTab = selectedFilter == ServerFilter.CUSTOM
+                val isFastestTab = activeFilter == ServerFilter.FASTEST
+                val isCustomTab = activeFilter == ServerFilter.CUSTOM
 
-                // Dark FASTEST Hero Card (shown ONLY on the Fastest tab)
+                // Nothing OS Inverted High-Contrast FASTEST Hero Card (white in Dark, matte black in Light)
                 if (isFastestTab && fastestNode != null) {
                     item(key = "fastest_hero_card") {
+                        val heroInteraction = remember { MutableInteractionSource() }
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable(role = Role.Button) { onSelectServer(fastestNode) }
+                                .animateItem()
+                                .nothingPressScale(heroInteraction, pressedScale = 0.97f)
+                                .clip(RoundedCornerShape(22.dp))
+                                .clickable(
+                                    interactionSource = heroInteraction,
+                                    indication = androidx.compose.material3.ripple(),
+                                    role = Role.Button
+                                ) { onSelectServer(fastestNode) }
                                 .testTag("server_card_featured"),
-                            shape = RoundedCornerShape(20.dp),
-                            color = HollowInk
+                            shape = RoundedCornerShape(22.dp),
+                            color = NothingInvertedSurface
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                                    .padding(horizontal = 18.dp, vertical = 16.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "FASTEST",
-                                        fontFamily = JetBrainsMonoFamily,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 10.5.sp,
-                                        letterSpacing = 1.4.sp,
-                                        color = HollowOrange
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        HollowBlinkingDot(
+                                            color = NothingRed,
+                                            modifier = Modifier.size(6.dp)
+                                        )
+                                        Text(
+                                            text = "FASTEST",
+                                            fontFamily = JetBrainsMonoFamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 10.sp,
+                                            letterSpacing = 1.4.sp,
+                                            color = NothingOnInvertedSurface
+                                        )
+                                    }
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(7.dp)
                                     ) {
                                         Text(
                                             text = countryCodeToFlagEmoji(fastestNode.countryCode),
-                                            fontSize = 22.sp
+                                            fontSize = 18.sp
                                         )
                                         Text(
-                                            text = fastestNode.countryName.ifBlank { "Fastest Node" },
-                                            fontFamily = SpaceGroteskFamily,
-                                            fontWeight = FontWeight.Bold,
+                                            text = fastestNode.countryName.ifBlank { "FASTEST" }.uppercase(),
+                                            fontFamily = DotoDisplayFamily,
+                                            fontWeight = FontWeight.ExtraBold,
                                             fontSize = 21.sp,
-                                            color = HollowCream,
+                                            letterSpacing = 0.8.sp,
+                                            color = NothingOnInvertedSurface,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                     }
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(3.dp))
                                     val addr = fastestNode.resolvedIp.ifBlank { fastestNode.host }
                                     Text(
-                                        text = "$addr:${fastestNode.port}",
+                                        text = addr,
                                         fontFamily = JetBrainsMonoFamily,
-                                        fontSize = 12.5.sp,
-                                        color = Color(0xFF9C978E),
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 11.5.sp,
+                                        color = NothingOnInvertedSecondary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
 
                                 Row(verticalAlignment = Alignment.Bottom) {
                                     Text(
                                         text = if (fastestNode.pingMs > 0) "${fastestNode.pingMs}" else "—",
-                                        fontFamily = JetBrainsMonoFamily,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 28.sp,
-                                        color = HollowCream
+                                        fontFamily = DotoDisplayFamily,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 30.sp,
+                                        color = NothingOnInvertedSurface
                                     )
                                     if (fastestNode.pingMs > 0) {
-                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Spacer(modifier = Modifier.width(3.dp))
                                         Text(
                                             text = "ms",
                                             fontFamily = JetBrainsMonoFamily,
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF9C978E),
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 11.5.sp,
+                                            color = NothingOnInvertedSecondary,
                                             modifier = Modifier.padding(bottom = 4.dp)
                                         )
                                     }
@@ -538,7 +608,8 @@ fun CountryServerListScreen(
                                 .fillMaxWidth()
                                 .padding(top = 12.dp),
                             shape = RoundedCornerShape(20.dp),
-                            color = HollowCreamSurface
+                            color = HollowCreamSurface,
+                            border = BorderStroke(1.dp, HollowCreamDivider)
                         ) {
                             Column(
                                 modifier = Modifier
@@ -651,10 +722,7 @@ fun CountryServerListScreen(
                                     )
                                 }
                                 if (idx < displayedServers.lastIndex) {
-                                    HorizontalDivider(
-                                        thickness = 1.dp,
-                                        color = HollowCreamDivider
-                                    )
+                                    NothingDottedDivider()
                                 }
                             }
                         }
@@ -713,10 +781,7 @@ fun CountryServerListScreen(
                                     )
                                 }
                                 if (idx < topFastestServers.lastIndex) {
-                                    HorizontalDivider(
-                                        thickness = 1.dp,
-                                        color = HollowCreamDivider
-                                    )
+                                    NothingDottedDivider()
                                 }
                             }
                         }
@@ -736,7 +801,16 @@ fun CountryServerListScreen(
                     }?.countryCode
 
                     item(key = "country_$country") {
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        val chevronAngle by animateFloatAsState(
+                            targetValue = if (isExpanded) 90f else 0f,
+                            animationSpec = NothingMotion.snappySpring(),
+                            label = "country_chevron_$country"
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem()
+                        ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -744,7 +818,7 @@ fun CountryServerListScreen(
                                     .clickable(role = Role.Button) {
                                         expanded[country] = !isExpanded
                                     }
-                                    .padding(vertical = 16.dp),
+                                    .padding(vertical = 13.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
@@ -754,30 +828,33 @@ fun CountryServerListScreen(
                                     ) {
                                         Text(
                                             text = countryCodeToFlagEmoji(groupCode),
-                                            fontSize = 20.sp
+                                            fontSize = 17.sp
                                         )
                                         Text(
                                             text = country,
                                             fontFamily = SpaceGroteskFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 18.5.sp,
-                                            color = HollowInk,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 15.5.sp,
+                                            color = NothingOnCanvas,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         if (hasSelected) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(7.dp)
-                                                    .clip(RoundedCornerShape(2.dp))
-                                                    .background(HollowOrange)
+                                                    .size(6.dp)
+                                                    .clip(RoundedCornerShape(50))
+                                                    .background(NothingRed)
                                             )
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(3.dp))
                                     Text(
-                                        text = "${orderedServers.size} node${if (orderedServers.size == 1) "" else "s"}",
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                                        text = "${orderedServers.size} NODE${if (orderedServers.size == 1) "" else "S"}",
+                                        fontFamily = JetBrainsMonoFamily,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 10.sp,
+                                        letterSpacing = 1.2.sp,
                                         color = HollowInkSecondary
                                     )
                                 }
@@ -792,59 +869,40 @@ fun CountryServerListScreen(
                                                 text = "$bestPing",
                                                 fontFamily = JetBrainsMonoFamily,
                                                 fontWeight = FontWeight.Medium,
-                                                fontSize = 14.5.sp,
-                                                color = HollowInk
+                                                fontSize = 13.sp,
+                                                color = NothingOnCanvas
                                             )
                                             Spacer(modifier = Modifier.width(3.dp))
                                             Text(
                                                 text = "ms",
                                                 fontFamily = JetBrainsMonoFamily,
-                                                fontSize = 12.sp,
+                                                fontSize = 11.sp,
                                                 color = HollowInkSecondary
                                             )
                                         }
                                     } else {
                                         Text(
-                                            text = "Timeout",
+                                            text = "TIMEOUT",
                                             fontFamily = JetBrainsMonoFamily,
-                                            fontSize = 12.sp,
-                                            color = HollowOrange
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 10.5.sp,
+                                            letterSpacing = 0.8.sp,
+                                            color = NothingRed
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(6.dp))
-                                    val barFraction = if (bestPing > 0) {
-                                        (bestPing / 1500f).coerceIn(0.16f, 1f)
-                                    } else {
-                                        0.10f
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .width(64.dp)
-                                            .height(4.dp)
-                                            .clip(RoundedCornerShape(2.dp))
-                                            .background(HollowCreamDivider)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxHeight()
-                                                .fillMaxWidth(barFraction)
-                                                .clip(RoundedCornerShape(2.dp))
-                                                .background(if (bestPing > 0) HollowInk else HollowOrange)
-                                        )
-                                    }
+                                    NothingSignalDots(pingMs = bestPing, dotSize = 5.dp, dotSpacing = 4.dp)
                                 }
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
 
                                 Icon(
-                                    imageVector = if (isExpanded) {
-                                        Icons.Rounded.KeyboardArrowDown
-                                    } else {
-                                        Icons.AutoMirrored.Rounded.KeyboardArrowRight
-                                    },
+                                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                                     contentDescription = if (isExpanded) "Collapse $country" else "Expand $country",
                                     tint = HollowInkSecondary,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .rotate(chevronAngle)
                                 )
                             }
 
@@ -856,9 +914,10 @@ fun CountryServerListScreen(
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 12.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = HollowCreamSurface
+                                        .padding(bottom = 14.dp),
+                                    shape = RoundedCornerShape(18.dp),
+                                    color = NothingCardSurface,
+                                    border = BorderStroke(1.dp, NothingBorder)
                                 ) {
                                     Column(modifier = Modifier.fillMaxWidth()) {
                                         orderedServers.forEachIndexed { idx, server ->
@@ -900,9 +959,7 @@ fun CountryServerListScreen(
                                                 )
                                             }
                                             if (idx < orderedServers.lastIndex) {
-                                                HorizontalDivider(
-                                                    thickness = 1.dp,
-                                                    color = HollowCreamDivider,
+                                                NothingDottedDivider(
                                                     modifier = Modifier.padding(horizontal = 12.dp)
                                                 )
                                             }
@@ -912,12 +969,13 @@ fun CountryServerListScreen(
                             }
 
                             if (groupIndex < orderedGroups.lastIndex) {
-                                HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+                                NothingDottedDivider()
                             }
                         }
                     }
                 }
                 }
+            }
             }
         }
     }
@@ -925,7 +983,7 @@ fun CountryServerListScreen(
     if (showDeleteAllConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteAllConfirm = false },
-            containerColor = HollowCream,
+            containerColor = NothingSurfaceElevated,
             shape = RoundedCornerShape(24.dp),
             title = {
                 Text(

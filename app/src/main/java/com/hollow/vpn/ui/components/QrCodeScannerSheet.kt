@@ -64,6 +64,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.FilterQuality
 import com.hollow.vpn.data.ServerEntity
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
+import com.hollow.vpn.ui.theme.HollowInk
+import com.hollow.vpn.ui.theme.NothingBorder
+import com.hollow.vpn.ui.theme.NothingRed
+import com.hollow.vpn.ui.theme.NothingSurfaceElevated
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.ButtonDefaults
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
@@ -122,10 +129,13 @@ fun CameraQrScannerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = NothingSurfaceElevated,
+        shape = RoundedCornerShape(24.dp),
         title = {
             Text(
                 text = "Scan Server QR Code",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge.copy(fontFamily = DotoDisplayFamily),
+                color = HollowInk
             )
         },
         text = {
@@ -136,7 +146,7 @@ fun CameraQrScannerDialog(
             ) {
                 if (hasCameraPermission) {
                     CameraQrPreviewBox(
-                        accentColor = scheme.primary,
+                        accentColor = NothingRed,
                         onDecoded = onQrDecoded,
                         onCameraError = { msg -> scanError = msg }
                     )
@@ -197,6 +207,8 @@ fun CameraQrScannerDialog(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     },
+                    border = BorderStroke(1.dp, NothingBorder),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = HollowInk),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("btn_pick_qr_from_gallery")
@@ -214,7 +226,7 @@ fun CameraQrScannerDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = scheme.onSurfaceVariant)
             }
         }
     )
@@ -419,8 +431,8 @@ fun ServerQrShareDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = scheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(28.dp),
+        containerColor = NothingSurfaceElevated,
+        shape = RoundedCornerShape(24.dp),
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -430,8 +442,8 @@ fun ServerQrShareDialog(
                 Column {
                     Text(
                         text = server.countryName,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = scheme.onSurface
+                        style = MaterialTheme.typography.titleLarge.copy(fontFamily = DotoDisplayFamily),
+                        color = HollowInk
                     )
                     Text(
                         text = "${server.protocolCore} · ${server.resolvedIp.ifBlank { server.host }}:${server.port}",

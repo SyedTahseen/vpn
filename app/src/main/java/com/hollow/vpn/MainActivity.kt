@@ -13,23 +13,32 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -82,9 +91,11 @@ import com.hollow.vpn.ui.screens.GettingStartedScreen
 import com.hollow.vpn.ui.screens.RawXrayJsonEditorDialog
 import com.hollow.vpn.ui.screens.SettingsScreen
 import com.hollow.vpn.ui.screens.SplashFetchingScreen
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowAmber
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
+import com.hollow.vpn.ui.theme.HollowDarkInk
 import com.hollow.vpn.ui.theme.HollowForest
 import com.hollow.vpn.ui.theme.HollowForestDivider
 import com.hollow.vpn.ui.theme.HollowForestMuted
@@ -97,7 +108,12 @@ import com.hollow.vpn.ui.theme.HollowObsidianMuted
 import com.hollow.vpn.ui.theme.HollowOrange
 import com.hollow.vpn.ui.theme.HollowVpnTheme
 import com.hollow.vpn.ui.theme.JetBrainsMonoFamily
+import com.hollow.vpn.ui.theme.NothingBorder
+import com.hollow.vpn.ui.theme.NothingMatrixGreen
+import com.hollow.vpn.ui.theme.NothingMotion
+import com.hollow.vpn.ui.theme.NothingSurfaceElevated
 import com.hollow.vpn.ui.theme.SpaceGroteskFamily
+import com.hollow.vpn.ui.theme.detectOledDisplay
 import com.hollow.vpn.vpn.XrayVpnService
 
 class MainActivity : ComponentActivity() {
@@ -105,9 +121,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            HollowVpnTheme {
-                HollowVpnApp()
-            }
+            HollowVpnApp()
         }
     }
 }
@@ -135,17 +149,27 @@ fun HollowVpnApp(
     val appUpdateState by vpnViewModel.appUpdateState.collectAsStateWithLifecycle()
     val xrayLogs by XrayVpnService.logs.collectAsStateWithLifecycle()
 
+    val systemDark = isSystemInDarkTheme()
+    val isDarkTheme = when (settings.themeMode.lowercase()) {
+        "light" -> false
+        "system" -> systemDark
+        else -> true
+    }
+    val isOledHardware = remember(context) { detectOledDisplay(context) }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val isDarkHomePhase = currentScreen == VpnScreen.CONNECTED_HOME &&
-        (telemetry.isConnecting || telemetry.isConnected)
+    val isDarkSurfaceNow = isDarkTheme ||
+        (currentScreen == VpnScreen.CONNECTED_HOME && (telemetry.isConnecting || telemetry.isConnected))
 
     SideEffect {
         val window = (view.context as? Activity)?.window ?: return@SideEffect
         val insetsController = WindowCompat.getInsetsController(window, view)
-        insetsController.isAppearanceLightStatusBars = !isDarkHomePhase
-        insetsController.isAppearanceLightNavigationBars = !isDarkHomePhase
+        insetsController.isAppearanceLightStatusBars = !isDarkSurfaceNow
+        insetsController.isAppearanceLightNavigationBars = !isDarkSurfaceNow
     }
+
+    HollowVpnTheme(darkTheme = isDarkTheme, oledDark = isOledHardware) {
 
     LaunchedEffect(settings.hideFromRecentApps) {
         try {
@@ -231,10 +255,9 @@ fun HollowVpnApp(
         }
     }
 
-    // Bottom navigation is shown on Connect (Pages 1-3), Servers (Pages 4 & 7), and Add Server (Page 5)
+    // Floating Nothing OS capsule navigation dock shows on primary top-level tabs only (hidden on Settings & Add Server)
     val showBottomNav = currentScreen == VpnScreen.CONNECTED_HOME ||
-        currentScreen == VpnScreen.SERVER_LIST ||
-        currentScreen == VpnScreen.ADD_SERVER
+        currentScreen == VpnScreen.SERVER_LIST
 
     val selectedBottomTab = when (currentScreen) {
         VpnScreen.CONNECTED_HOME -> HollowBottomTab.CONNECT
@@ -259,7 +282,7 @@ fun HollowVpnApp(
         else -> HollowOrange
     }
     val navActiveTextColor = when {
-        currentScreen == VpnScreen.CONNECTED_HOME && (telemetry.isConnecting || telemetry.isConnected) -> HollowCream
+        currentScreen == VpnScreen.CONNECTED_HOME && (telemetry.isConnecting || telemetry.isConnected) -> HollowDarkInk
         else -> HollowInk
     }
     val navInactiveTextColor = when {
@@ -319,32 +342,168 @@ fun HollowVpnApp(
                         Snackbar(
                             snackbarData = data,
                             shape = RoundedCornerShape(16.dp),
-                            containerColor = HollowInk,
-                            contentColor = HollowCream
+                            containerColor = NothingSurfaceElevated,
+                            contentColor = HollowInk,
+                            actionColor = HollowOrange
                         )
                     }
                 },
                 bottomBar = {
-                    if (showBottomNav && !useNavigationRail) {
-                        HollowBottomNavigationBar(
-                            selectedTab = selectedBottomTab,
-                            backgroundColor = navBackgroundColor,
-                            borderColor = navBorderColor,
-                            activeIndicatorColor = navIndicatorColor,
-                            activeContentColor = navActiveTextColor,
-                            inactiveContentColor = navInactiveTextColor,
-                            onSelectConnect = { vpnViewModel.navigateTo(VpnScreen.CONNECTED_HOME) },
-                            onSelectServers = { vpnViewModel.navigateTo(VpnScreen.SERVER_LIST) },
-                            onSelectSettings = { vpnViewModel.navigateTo(VpnScreen.SETTINGS) }
-                        )
+                    val showFetchingPill = fetchingProgress.isActive &&
+                        currentScreen != VpnScreen.SPLASH_FETCHING &&
+                        currentScreen != VpnScreen.GETTING_STARTED
+                    val renderNavBar = showBottomNav && !useNavigationRail
+                    if (showFetchingPill || renderNavBar) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            AnimatedVisibility(
+                                visible = showFetchingPill,
+                                enter = fadeIn() + slideInVertically { it / 2 },
+                                exit = fadeOut() + slideOutVertically { it / 2 }
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(999.dp),
+                                    color = NothingSurfaceElevated,
+                                    border = BorderStroke(1.dp, NothingBorder),
+                                    shadowElevation = 6.dp,
+                                    modifier = Modifier
+                                        .padding(
+                                            start = 18.dp,
+                                            end = 18.dp,
+                                            top = 4.dp,
+                                            bottom = if (renderNavBar) 6.dp else 12.dp
+                                        )
+                                        .then(if (!renderNavBar) Modifier.navigationBarsPadding() else Modifier)
+                                        .minimumInteractiveComponentSize()
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .clickable(role = Role.Button) {
+                                            vpnViewModel.reopenFetchingScreen()
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(start = 14.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        HollowBlinkingDot(
+                                            color = if (fetchingProgress.workingCount > 0) NothingMatrixGreen else HollowOrange
+                                        )
+                                        Text(
+                                            text = "Fetching · ${fetchingProgress.workingCount} ready",
+                                            fontFamily = JetBrainsMonoFamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp,
+                                            color = HollowInk
+                                        )
+                                        Surface(
+                                            shape = RoundedCornerShape(999.dp),
+                                            color = HollowOrange
+                                        ) {
+                                            Text(
+                                                text = "SHOW",
+                                                fontFamily = JetBrainsMonoFamily,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 10.5.sp,
+                                                letterSpacing = 0.8.sp,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            AnimatedVisibility(
+                                visible = renderNavBar,
+                                enter = slideInVertically(
+                                    animationSpec = tween(260, easing = NothingMotion.FluidEase)
+                                ) { it } + fadeIn(tween(180)),
+                                exit = slideOutVertically(
+                                    animationSpec = tween(220, easing = NothingMotion.FluidEase)
+                                ) { it } + fadeOut(tween(150))
+                            ) {
+                                HollowBottomNavigationBar(
+                                    selectedTab = selectedBottomTab,
+                                    backgroundColor = navBackgroundColor,
+                                    borderColor = navBorderColor,
+                                    activeIndicatorColor = navIndicatorColor,
+                                    activeContentColor = navActiveTextColor,
+                                    inactiveContentColor = navInactiveTextColor,
+                                    onSelectConnect = { vpnViewModel.navigateTo(VpnScreen.CONNECTED_HOME) },
+                                    onSelectServers = { vpnViewModel.navigateTo(VpnScreen.SERVER_LIST) },
+                                    onSelectSettings = { vpnViewModel.navigateTo(VpnScreen.SETTINGS) }
+                                )
+                            }
+                        }
                     }
                 }
             ) { innerPadding ->
                 Box(modifier = Modifier.fillMaxSize()) {
-                    Crossfade(
+                    AnimatedContent(
                         targetState = currentScreen,
-                        animationSpec = tween(durationMillis = 220),
-                        label = "vpn_screen_crossfade"
+                        transitionSpec = {
+                            val ease = NothingMotion.FluidEase
+                            val isSubscreenPush = targetState == VpnScreen.SETTINGS || targetState == VpnScreen.ADD_SERVER
+                            val isSubscreenPop = initialState == VpnScreen.SETTINGS || initialState == VpnScreen.ADD_SERVER
+                            val isModalFlow = targetState == VpnScreen.SPLASH_FETCHING ||
+                                initialState == VpnScreen.SPLASH_FETCHING ||
+                                targetState == VpnScreen.GETTING_STARTED ||
+                                initialState == VpnScreen.GETTING_STARTED
+
+                            when {
+                                isModalFlow -> {
+                                    (fadeIn(tween(260, easing = ease)) +
+                                        slideInVertically(tween(280, easing = ease)) { it / 16 } +
+                                        scaleIn(tween(280, easing = ease), initialScale = 0.97f))
+                                        .togetherWith(
+                                            fadeOut(tween(200, easing = ease)) +
+                                                scaleOut(tween(200, easing = ease), targetScale = 0.98f)
+                                        )
+                                }
+                                isSubscreenPush && !isSubscreenPop -> {
+                                    (slideInHorizontally(tween(280, easing = ease)) { (it * 0.24f).toInt() } +
+                                        fadeIn(tween(220, easing = ease)))
+                                        .togetherWith(
+                                            slideOutHorizontally(tween(260, easing = ease)) { -(it * 0.08f).toInt() } +
+                                                scaleOut(tween(260, easing = ease), targetScale = 0.96f) +
+                                                fadeOut(tween(180))
+                                        )
+                                }
+                                isSubscreenPop && !isSubscreenPush -> {
+                                    (slideInHorizontally(tween(280, easing = ease)) { -(it * 0.10f).toInt() } +
+                                        scaleIn(tween(280, easing = ease), initialScale = 0.96f) +
+                                        fadeIn(tween(220, easing = ease)))
+                                        .togetherWith(
+                                            slideOutHorizontally(tween(240, easing = ease)) { (it * 0.22f).toInt() } +
+                                                fadeOut(tween(180))
+                                        )
+                                }
+                                targetState == VpnScreen.SERVER_LIST && initialState == VpnScreen.CONNECTED_HOME -> {
+                                    (slideInHorizontally(tween(260, easing = ease)) { (it * 0.12f).toInt() } +
+                                        fadeIn(tween(220, easing = ease)))
+                                        .togetherWith(
+                                            slideOutHorizontally(tween(240, easing = ease)) { -(it * 0.10f).toInt() } +
+                                                fadeOut(tween(170))
+                                        )
+                                }
+                                targetState == VpnScreen.CONNECTED_HOME && initialState == VpnScreen.SERVER_LIST -> {
+                                    (slideInHorizontally(tween(260, easing = ease)) { -(it * 0.12f).toInt() } +
+                                        fadeIn(tween(220, easing = ease)))
+                                        .togetherWith(
+                                            slideOutHorizontally(tween(240, easing = ease)) { (it * 0.10f).toInt() } +
+                                                fadeOut(tween(170))
+                                        )
+                                }
+                                else -> {
+                                    (fadeIn(tween(220, easing = ease)) +
+                                        scaleIn(tween(240, easing = ease), initialScale = 0.98f))
+                                        .togetherWith(fadeOut(tween(170)))
+                                }
+                            }
+                        },
+                        label = "vpn_screen_motion"
                     ) { screen ->
                         when (screen) {
                             VpnScreen.GETTING_STARTED -> {
@@ -505,58 +664,6 @@ fun HollowVpnApp(
                         }
                     }
 
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = fetchingProgress.isActive &&
-                            currentScreen != VpnScreen.SPLASH_FETCHING &&
-                            currentScreen != VpnScreen.GETTING_STARTED,
-                        enter = fadeIn() + slideInVertically { it / 2 },
-                        exit = fadeOut() + slideOutVertically { it / 2 },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(
-                                bottom = innerPadding.calculateBottomPadding() + 12.dp,
-                                start = 18.dp,
-                                end = 18.dp
-                            )
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = HollowInk,
-                            border = BorderStroke(1.dp, HollowObsidianDivider),
-                            shadowElevation = 6.dp,
-                            modifier = Modifier
-                                .minimumInteractiveComponentSize()
-                                .clip(RoundedCornerShape(999.dp))
-                                .clickable(role = Role.Button) {
-                                    vpnViewModel.reopenFetchingScreen()
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                HollowBlinkingDot(
-                                    color = if (fetchingProgress.workingCount > 0) HollowLime else HollowOrange
-                                )
-                                Text(
-                                    text = "Fetching · ${fetchingProgress.workingCount} ready",
-                                    fontFamily = JetBrainsMonoFamily,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 12.sp,
-                                    color = HollowCream
-                                )
-                                Text(
-                                    text = "Show",
-                                    fontFamily = SpaceGroteskFamily,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 12.5.sp,
-                                    color = HollowOrange
-                                )
-                            }
-                        }
-                    }
-
                     inspectingJsonServer?.let { server ->
                         RawXrayJsonEditorDialog(
                             server = server,
@@ -584,5 +691,6 @@ fun HollowVpnApp(
                 }
             }
         }
+    }
     }
 }

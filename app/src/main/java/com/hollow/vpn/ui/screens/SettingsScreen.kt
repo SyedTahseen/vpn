@@ -6,10 +6,18 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -18,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -31,19 +40,22 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.CloudQueue
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.SettingsBrightness
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.Route
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -57,35 +69,43 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.Canvas
-import androidx.compose.material.icons.outlined.SystemUpdate
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.Dp
 import com.hollow.vpn.BuildConfig
 import com.hollow.vpn.data.AppSettingsState
 import com.hollow.vpn.data.AppUpdateState
 import com.hollow.vpn.ui.components.HollowBrandShieldLogo
 import com.hollow.vpn.ui.components.HollowSwitch
 import com.hollow.vpn.ui.components.HollowTopSquareButton
+import com.hollow.vpn.ui.components.NothingDottedDivider
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
 import com.hollow.vpn.ui.theme.HollowCreamSurface
 import com.hollow.vpn.ui.theme.HollowInk
 import com.hollow.vpn.ui.theme.HollowInkSecondary
-import com.hollow.vpn.ui.theme.HollowLime
 import com.hollow.vpn.ui.theme.HollowOrange
 import com.hollow.vpn.ui.theme.JetBrainsMonoFamily
+import com.hollow.vpn.ui.theme.NothingMotion
+import com.hollow.vpn.ui.theme.NothingOnCanvas
+import com.hollow.vpn.ui.theme.NothingPillActiveBg
+import com.hollow.vpn.ui.theme.NothingPillActiveIcon
+import com.hollow.vpn.ui.theme.NothingRed
+import com.hollow.vpn.ui.theme.NothingSurfaceElevated
+import com.hollow.vpn.ui.theme.NothingTopBtnBorder
+import com.hollow.vpn.ui.theme.NothingTopBtnFill
 import com.hollow.vpn.ui.theme.SpaceGroteskFamily
+import com.hollow.vpn.ui.theme.nothingPressScale
 
 private enum class ActiveSettingDialog {
     UPDATE_INTERVAL,
@@ -139,7 +159,7 @@ private fun formatDnsSummary(dns: String): String = when {
 }
 
 /**
- * PAGE 6: Hollow Editorial Settings Screen (Original Cream Surface & Palette)
+ * PAGE 6: Hollow Settings Screen (Compact inline header, clean single-line rows, no bottom nav bar)
  */
 @Composable
 fun SettingsScreen(
@@ -178,57 +198,69 @@ fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            HollowTopSquareButton(
-                containerColor = HollowCreamSurface,
-                contentColor = HollowInk,
-                contentDescription = "Back",
-                onClick = onBack,
-                modifier = Modifier.testTag("btn_navigate_back")
-            ) { tint ->
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                    contentDescription = null,
-                    tint = tint,
-                    modifier = Modifier.size(22.dp)
+            // Compact inline header: Back button + SETTINGS on the same row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HollowTopSquareButton(
+                    containerColor = NothingTopBtnFill,
+                    contentColor = NothingOnCanvas,
+                    borderColor = NothingTopBtnBorder,
+                    contentDescription = "Back",
+                    onClick = onBack,
+                    modifier = Modifier.testTag("btn_navigate_back")
+                ) { tint ->
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(21.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = "SETTINGS",
+                    fontFamily = DotoDisplayFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    letterSpacing = 0.9.sp,
+                    maxLines = 1,
+                    color = NothingOnCanvas
                 )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            Text(
-                text = "Settings",
-                fontFamily = SpaceGroteskFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-                letterSpacing = (-0.7).sp,
-                color = HollowInk
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Subscriptions, tunnel engine & routing controls",
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                color = HollowInkSecondary
+            // 0. APPEARANCE
+            SettingsSectionHeader(title = "APPEARANCE")
+
+            ThemeModeInlineSelector(
+                selectedMode = settings.themeMode,
+                onSelectMode = { mode ->
+                    onUpdateSettings { it.copy(themeMode = mode) }
+                }
             )
 
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 1. SUBSCRIPTIONS (Top priority)
+            // 1. SUBSCRIPTIONS
             SettingsSectionHeader(title = "SUBSCRIPTIONS")
 
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.Link,
                 title = "Servers & subscriptions",
-                subtitle = "Add subscription links, keys, or QR codes",
                 valueText = if (serverCount > 0) "$serverCount saved" else "Add",
                 onClick = onOpenAddSubscription,
                 testTag = "row_custom_subscription"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsToggleRow(
                 icon = Icons.Outlined.CloudQueue,
                 title = "Auto-update servers",
-                subtitle = "Periodically refresh & rank fastest nodes",
                 checked = settings.autoConfigure,
                 onCheckedChange = { enabled ->
                     onUpdateSettings { it.copy(autoConfigure = enabled) }
@@ -236,17 +268,17 @@ fun SettingsScreen(
                 testTag = "switch_auto_configure"
             )
             if (settings.autoConfigure) {
-                HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+                NothingDottedDivider()
                 SettingsValueNavigationRow(
                     icon = Icons.Outlined.Refresh,
                     title = "Update interval",
-                    subtitle = "Background refresh frequency",
                     valueText = settings.updateIntervalLabel,
                     onClick = { activeDialog = ActiveSettingDialog.UPDATE_INTERVAL },
                     testTag = "row_update_interval"
                 )
             }
-            Spacer(modifier = Modifier.height(28.dp))
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // 2. PER-APP ROUTING
             SettingsSectionHeader(title = "PER-APP ROUTING")
@@ -254,11 +286,6 @@ fun SettingsScreen(
             SettingsToggleRow(
                 icon = Icons.Outlined.Apps,
                 title = "Per-app routing",
-                subtitle = when {
-                    !settings.perAppProxyEnabled -> "All apps use VPN — turn on to exclude apps"
-                    settings.bypassSelectedApps -> "${settings.selectedAppPackages.size} app(s) skip VPN"
-                    else -> "Only ${settings.selectedAppPackages.size} app(s) use VPN"
-                },
                 checked = settings.perAppProxyEnabled,
                 onCheckedChange = { enabled ->
                     onUpdateSettings {
@@ -270,19 +297,14 @@ fun SettingsScreen(
                 },
                 testTag = "switch_per_app_proxy"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.Apps,
                 title = if (!settings.perAppProxyEnabled || settings.bypassSelectedApps) {
-                    "Choose apps to skip VPN"
+                    "Apps skipping VPN"
                 } else {
-                    "Choose apps to use VPN"
-                },
-                subtitle = if (!settings.perAppProxyEnabled || settings.bypassSelectedApps) {
-                    "Selected apps use normal internet (e.g. banking apps)"
-                } else {
-                    "All other apps use normal internet"
+                    "Apps using VPN"
                 },
                 valueText = if (settings.selectedAppPackages.isEmpty()) {
                     "None"
@@ -294,7 +316,7 @@ fun SettingsScreen(
             )
 
             if (settings.perAppProxyEnabled) {
-                HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+                NothingDottedDivider()
                 PerAppInlineModeRow(
                     bypassSelectedApps = settings.bypassSelectedApps,
                     onSelectBypass = { bypass ->
@@ -303,49 +325,45 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 3. CONNECTION (Startup -> Protocol -> Failover -> Security)
+            // 3. CONNECTION
             SettingsSectionHeader(title = "CONNECTION")
 
             SettingsToggleRow(
                 icon = Icons.Outlined.PlayArrow,
                 title = "Start on app open",
-                subtitle = "Auto-connect when launching Hollow",
                 checked = settings.startOnAppOpen,
                 onCheckedChange = { enabled ->
                     onUpdateSettings { it.copy(startOnAppOpen = enabled) }
                 },
                 testTag = "switch_start_on_open"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsValueNavigationRow(
                 icon = Icons.Rounded.AccountTree,
                 title = "Protocol",
-                subtitle = "Preferred transport & stealth core",
                 valueText = formatConsumerProtocol(settings.protocolPreference),
                 onClick = { activeDialog = ActiveSettingDialog.PROTOCOL },
                 testTag = "row_protocol"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsToggleRow(
                 icon = Icons.Outlined.Refresh,
                 title = "Auto-switch slow servers",
-                subtitle = "Switch to a faster server when throughput stalls",
                 checked = settings.smartSwitchEnabled,
                 onCheckedChange = { enabled ->
                     onUpdateSettings { it.copy(smartSwitchEnabled = enabled) }
                 },
                 testTag = "switch_smart_switch"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsToggleRow(
                 icon = Icons.Outlined.Lock,
                 title = "Strict TLS verification",
-                subtitle = "Reject insecure or unencrypted server configs",
                 checked = settings.strictTlsEnabled,
                 onCheckedChange = { enabled ->
                     onUpdateSettings { it.copy(strictTlsEnabled = enabled) }
@@ -353,35 +371,32 @@ fun SettingsScreen(
                 testTag = "switch_strict_tls"
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 4. ROUTING (Traffic scope, DNS & IPv6)
+            // 4. ROUTING
             SettingsSectionHeader(title = "ROUTING")
 
             SettingsValueNavigationRow(
                 icon = Icons.Rounded.Route,
                 title = "Routing mode",
-                subtitle = "Control whether local LAN devices bypass VPN",
                 valueText = formatRoutingSummary(settings.routingMode),
                 onClick = { activeDialog = ActiveSettingDialog.ROUTING_MODE },
                 testTag = "row_routing_mode"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.Dns,
                 title = "Private DNS",
-                subtitle = "Encrypted domain lookups",
                 valueText = formatDnsSummary(settings.dnsMode),
                 onClick = { activeDialog = ActiveSettingDialog.DNS_PROVIDER },
                 testTag = "row_dns"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsToggleRow(
                 icon = Icons.Outlined.Language,
                 title = "IPv6 routing",
-                subtitle = "Enable dual-stack IPv6 traffic through tunnel",
                 checked = settings.ipv6Enabled,
                 onCheckedChange = { enabled ->
                     onUpdateSettings { it.copy(ipv6Enabled = enabled) }
@@ -389,7 +404,7 @@ fun SettingsScreen(
                 testTag = "switch_ipv6"
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // 5. SYSTEM & PRIVACY
             SettingsSectionHeader(title = "SYSTEM & PRIVACY")
@@ -397,7 +412,6 @@ fun SettingsScreen(
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.Lock,
                 title = "Always-on VPN & kill switch",
-                subtitle = "Configure system-level leak protection",
                 valueText = "System",
                 onClick = {
                     try {
@@ -409,12 +423,11 @@ fun SettingsScreen(
                 },
                 testTag = "row_system_vpn_settings"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsToggleRow(
                 icon = Icons.Outlined.VisibilityOff,
                 title = "Hide from recent apps",
-                subtitle = "Mask Hollow preview in Android's app switcher",
                 checked = settings.hideFromRecentApps,
                 onCheckedChange = { enabled ->
                     onUpdateSettings { it.copy(hideFromRecentApps = enabled) }
@@ -422,7 +435,7 @@ fun SettingsScreen(
                 testTag = "switch_hide_recents"
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // 6. DIAGNOSTICS & BACKUP
             SettingsSectionHeader(title = "DIAGNOSTICS & BACKUP")
@@ -430,44 +443,34 @@ fun SettingsScreen(
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.Info,
                 title = "Setup & permissions guide",
-                subtitle = "Verify VPN, kill switch, notifications & battery",
                 valueText = null,
                 onClick = onOpenGettingStarted,
                 testTag = "row_getting_started"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.Terminal,
                 title = "Xray diagnostic logs",
-                subtitle = "Inspect live tunnel core status & errors",
                 valueText = if (xrayLogs.isEmpty()) "Empty" else "${xrayLogs.size} lines",
                 onClick = { activeDialog = ActiveSettingDialog.XRAY_LOGS },
                 testTag = "row_xray_logs"
             )
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider()
 
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.FileUpload,
                 title = "Export server backup",
-                subtitle = "Copy all saved server configs to clipboard",
                 valueText = "$serverCount",
                 onClick = onExportServers,
                 testTag = "row_export_servers"
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 7. UPDATES & ABOUT
+            // 7. ABOUT
             SettingsSectionHeader(title = "ABOUT")
 
-            val updateSubtitle = when (appUpdateState) {
-                AppUpdateState.Idle -> "Check GitHub Releases for newer builds"
-                AppUpdateState.Checking -> "Checking for latest release…"
-                is AppUpdateState.UpToDate -> "Up to date · ${appUpdateState.latestVersion}"
-                is AppUpdateState.UpdateAvailable -> "New version ${appUpdateState.latestVersion} available"
-                is AppUpdateState.Error -> "Could not check — tap to retry"
-            }
             val updateBadge = when (appUpdateState) {
                 AppUpdateState.Idle -> "Check"
                 AppUpdateState.Checking -> "Checking"
@@ -479,7 +482,6 @@ fun SettingsScreen(
             SettingsValueNavigationRow(
                 icon = Icons.Outlined.SystemUpdate,
                 title = "Check for updates",
-                subtitle = updateSubtitle,
                 valueText = updateBadge,
                 onClick = {
                     activeDialog = ActiveSettingDialog.CHECK_UPDATE
@@ -488,29 +490,37 @@ fun SettingsScreen(
                 testTag = "row_check_updates"
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
+            val aboutInteraction = remember { MutableInteractionSource() }
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
-                    .clickable(role = Role.Button) { activeDialog = ActiveSettingDialog.ABOUT }
+                    .nothingPressScale(aboutInteraction, pressedScale = 0.97f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(
+                        interactionSource = aboutInteraction,
+                        indication = androidx.compose.material3.ripple(),
+                        role = Role.Button
+                    ) { activeDialog = ActiveSettingDialog.ABOUT }
                     .testTag("card_about_hollow"),
-                shape = RoundedCornerShape(22.dp),
-                color = HollowInk
+                shape = RoundedCornerShape(20.dp),
+                color = HollowCreamSurface,
+                border = BorderStroke(1.dp, HollowCreamDivider)
             ) {
+                val aboutRingInk = HollowInk
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Canvas(modifier = Modifier.matchParentSize()) {
                         val center = Offset(size.width * 0.88f, size.height * 0.24f)
                         drawCircle(
-                            color = HollowOrange.copy(alpha = 0.14f),
-                            radius = 58.dp.toPx(),
+                            color = NothingRed.copy(alpha = 0.22f),
+                            radius = 52.dp.toPx(),
                             center = center,
                             style = Stroke(width = 1.dp.toPx())
                         )
                         drawCircle(
-                            color = HollowLime.copy(alpha = 0.08f),
-                            radius = 92.dp.toPx(),
+                            color = aboutRingInk.copy(alpha = 0.08f),
+                            radius = 84.dp.toPx(),
                             center = center,
                             style = Stroke(width = 1.dp.toPx())
                         )
@@ -519,7 +529,7 @@ fun SettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp)
+                            .padding(16.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -528,28 +538,31 @@ fun SettingsScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(RoundedCornerShape(13.dp))
-                                    .background(Color(0xFF23221E)),
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(11.dp))
+                                    .background(NothingSurfaceElevated)
+                                    .border(1.dp, HollowCreamDivider, RoundedCornerShape(11.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 HollowBrandShieldLogo(
-                                    strokeColor = HollowCream,
-                                    modifier = Modifier.size(26.dp)
+                                    backgroundColor = NothingSurfaceElevated,
+                                    strokeColor = HollowInk,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Hollow VPN",
-                                    fontFamily = SpaceGroteskFamily,
+                                    text = "HOLLOW VPN",
+                                    fontFamily = DotoDisplayFamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 19.sp,
-                                    color = HollowCream
+                                    fontSize = 16.5.sp,
+                                    letterSpacing = 0.6.sp,
+                                    color = HollowInk
                                 )
                                 Text(
-                                    text = "Private Xray Multi-Protocol Tunnel",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                    color = Color(0xFFA7A298),
+                                    text = "Xray Multi-Protocol Tunnel",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                    color = HollowInkSecondary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -562,16 +575,16 @@ fun SettingsScreen(
                                     text = "v${BuildConfig.VERSION_NAME}",
                                     fontFamily = JetBrainsMonoFamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
+                                    fontSize = 10.5.sp,
                                     color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
-                        HorizontalDivider(thickness = 1.dp, color = Color(0xFF2C2B27))
                         Spacer(modifier = Modifier.height(12.dp))
+                        NothingDottedDivider()
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -584,16 +597,18 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                                 contentDescription = "Open About Hollow",
-                                tint = Color(0xFFA7A298),
-                                modifier = Modifier.size(20.dp)
+                                tint = HollowInkSecondary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp + bottomContentPadding))
-            Spacer(modifier = Modifier.navigationBarsPadding())
+            Spacer(modifier = Modifier.height(22.dp + bottomContentPadding))
+            if (bottomContentPadding == 0.dp) {
+                Spacer(modifier = Modifier.navigationBarsPadding())
+            }
         }
     }
 
@@ -719,10 +734,10 @@ private fun SettingsSectionHeader(title: String) {
         text = title,
         fontFamily = JetBrainsMonoFamily,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
-        letterSpacing = 1.4.sp,
+        fontSize = 10.5.sp,
+        letterSpacing = 1.3.sp,
         color = HollowOrange,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(bottom = 6.dp)
     )
 }
 
@@ -744,7 +759,6 @@ internal fun SettingsGroupCard(
 private fun SettingsToggleRow(
     icon: ImageVector,
     title: String,
-    subtitle: String?,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     testTag: String
@@ -754,7 +768,7 @@ private fun SettingsToggleRow(
             .fillMaxWidth()
             .minimumInteractiveComponentSize()
             .clickable { onCheckedChange(!checked) }
-            .padding(vertical = 15.dp)
+            .padding(vertical = 11.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -762,28 +776,21 @@ private fun SettingsToggleRow(
             imageVector = icon,
             contentDescription = null,
             tint = HollowInkSecondary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(19.dp)
         )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                ),
-                color = HollowInk
-            )
-            if (!subtitle.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                    color = HollowInkSecondary
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.5.sp
+            ),
+            color = HollowInk,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
         HollowSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange
@@ -795,7 +802,6 @@ private fun SettingsToggleRow(
 private fun SettingsValueNavigationRow(
     icon: ImageVector,
     title: String,
-    subtitle: String?,
     valueText: String?,
     onClick: () -> Unit,
     testTag: String
@@ -805,7 +811,7 @@ private fun SettingsValueNavigationRow(
             .fillMaxWidth()
             .minimumInteractiveComponentSize()
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(vertical = 15.dp)
+            .padding(vertical = 11.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -813,53 +819,47 @@ private fun SettingsValueNavigationRow(
             imageVector = icon,
             contentDescription = null,
             tint = HollowInkSecondary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(19.dp)
         )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                ),
-                color = HollowInk
-            )
-            if (!subtitle.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                    color = HollowInkSecondary
-                )
-            }
-        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.5.sp
+            ),
+            color = HollowInk,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
         if (!valueText.isNullOrBlank()) {
             Spacer(modifier = Modifier.width(10.dp))
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = HollowCreamSurface
+                color = HollowCreamSurface,
+                border = BorderStroke(1.dp, HollowCreamDivider)
             ) {
                 Text(
                     text = valueText,
                     fontFamily = JetBrainsMonoFamily,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 12.5.sp,
+                    fontSize = 11.5.sp,
                     color = HollowInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
         } else {
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
         }
         Icon(
             imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
             contentDescription = null,
             tint = HollowInkSecondary,
-            modifier = Modifier.size(19.dp)
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -869,31 +869,40 @@ private fun PerAppInlineModeRow(
     bypassSelectedApps: Boolean,
     onSelectBypass: (Boolean) -> Unit
 ) {
-    Column(
+    val selectedIndex = if (bypassSelectedApps) 0 else 1
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 13.dp)
-            .testTag("switch_bypass_selected_apps")
+            .padding(vertical = 10.dp)
+            .testTag("switch_bypass_selected_apps"),
+        shape = RoundedCornerShape(12.dp),
+        color = HollowCreamSurface,
+        border = BorderStroke(1.dp, HollowCreamDivider)
     ) {
-        Text(
-            text = "App routing mode",
-            style = MaterialTheme.typography.titleSmall.copy(
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp
-            ),
-            color = HollowInk
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            color = HollowCreamSurface
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
         ) {
-            Row(
+            val gap = 4.dp
+            val slotWidth = ((maxWidth - gap) / 2f).coerceAtLeast(1.dp)
+            val pillOffset by animateDpAsState(
+                targetValue = (slotWidth + gap) * selectedIndex,
+                animationSpec = NothingMotion.snappySpring(),
+                label = "per_app_pill_glide"
+            )
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .align(Alignment.CenterStart)
+                    .offset(x = pillOffset)
+                    .width(slotWidth)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(NothingPillActiveBg)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(gap)
             ) {
                 InlineModeSegment(
                     label = "Skip VPN",
@@ -913,28 +922,178 @@ private fun PerAppInlineModeRow(
 }
 
 @Composable
+private fun ThemeModeInlineSelector(
+    selectedMode: String,
+    onSelectMode: (String) -> Unit
+) {
+    val activeMode = when {
+        selectedMode.equals("Light", ignoreCase = true) -> "Light"
+        selectedMode.equals("System", ignoreCase = true) -> "System"
+        else -> "Dark"
+    }
+    val selectedIndex = when (activeMode) {
+        "Dark" -> 0
+        "Light" -> 1
+        else -> 2
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        shape = RoundedCornerShape(13.dp),
+        color = HollowCreamSurface,
+        border = BorderStroke(1.dp, HollowCreamDivider)
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        ) {
+            val gap = 4.dp
+            val slotWidth = ((maxWidth - gap * 2) / 3f).coerceAtLeast(1.dp)
+            val pillOffset by animateDpAsState(
+                targetValue = (slotWidth + gap) * selectedIndex,
+                animationSpec = NothingMotion.snappySpring(),
+                label = "theme_pill_glide"
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = pillOffset)
+                    .width(slotWidth)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(NothingPillActiveBg)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(gap)
+            ) {
+                ThemeModeSegment(
+                    label = "Dark",
+                    icon = Icons.Outlined.DarkMode,
+                    selected = activeMode == "Dark",
+                    onClick = { onSelectMode("Dark") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("theme_mode_dark")
+                )
+                ThemeModeSegment(
+                    label = "Light",
+                    icon = Icons.Outlined.LightMode,
+                    selected = activeMode == "Light",
+                    onClick = { onSelectMode("Light") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("theme_mode_light")
+                )
+                ThemeModeSegment(
+                    label = "System",
+                    icon = Icons.Outlined.SettingsBrightness,
+                    selected = activeMode == "System",
+                    onClick = { onSelectMode("System") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("theme_mode_system")
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeModeSegment(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val contentTint by animateColorAsState(
+        targetValue = if (selected) NothingPillActiveIcon else HollowInkSecondary,
+        animationSpec = tween(200, easing = NothingMotion.FluidEase),
+        label = "theme_seg_tint_$label"
+    )
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .nothingPressScale(interactionSource, pressedScale = 0.94f)
+            .clip(RoundedCornerShape(9.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.RadioButton,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+                .padding(horizontal = 6.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentTint,
+                modifier = Modifier.size(15.dp)
+            )
+            Spacer(modifier = Modifier.width(5.dp))
+            Text(
+                text = label,
+                fontFamily = SpaceGroteskFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.5.sp,
+                maxLines = 1,
+                color = contentTint
+            )
+        }
+    }
+}
+
+@Composable
 private fun InlineModeSegment(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    val contentTint by animateColorAsState(
+        targetValue = if (selected) NothingPillActiveIcon else HollowInkSecondary,
+        animationSpec = tween(200, easing = NothingMotion.FluidEase),
+        label = "inline_seg_tint_$label"
+    )
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
         modifier = modifier
             .minimumInteractiveComponentSize()
-            .height(36.dp)
+            .nothingPressScale(interactionSource, pressedScale = 0.94f)
             .clip(RoundedCornerShape(9.dp))
-            .clickable(role = Role.RadioButton, onClick = onClick),
-        shape = RoundedCornerShape(9.dp),
-        color = if (selected) HollowInk else Color.Transparent
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.RadioButton,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
                 text = label,
                 fontFamily = SpaceGroteskFamily,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp,
-                color = if (selected) HollowCream else HollowInkSecondary
+                fontSize = 12.5.sp,
+                color = contentTint
             )
         }
     }
@@ -950,17 +1109,17 @@ private fun AboutCardStat(
             text = label,
             fontFamily = JetBrainsMonoFamily,
             fontWeight = FontWeight.Medium,
-            fontSize = 9.5.sp,
-            letterSpacing = 1.sp,
-            color = Color(0xFF9C978E)
+            fontSize = 9.sp,
+            letterSpacing = 0.9.sp,
+            color = HollowInkSecondary
         )
-        Spacer(modifier = Modifier.height(3.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = value,
             fontFamily = JetBrainsMonoFamily,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 12.5.sp,
-            color = HollowCream
+            fontSize = 11.5.sp,
+            color = HollowInk
         )
     }
 }

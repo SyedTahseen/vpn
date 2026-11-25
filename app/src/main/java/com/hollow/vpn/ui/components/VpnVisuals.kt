@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -77,6 +78,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -95,19 +97,35 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
 import com.hollow.vpn.ui.theme.HollowCreamSurface
+import com.hollow.vpn.ui.theme.HollowDarkInk
 import com.hollow.vpn.ui.theme.HollowForest
 import com.hollow.vpn.ui.theme.HollowForestCard
 import com.hollow.vpn.ui.theme.HollowForestDivider
 import com.hollow.vpn.ui.theme.HollowForestMuted
 import com.hollow.vpn.ui.theme.HollowInk
+import com.hollow.vpn.ui.theme.HollowInkMuted
 import com.hollow.vpn.ui.theme.HollowInkSecondary
 import com.hollow.vpn.ui.theme.HollowLime
 import com.hollow.vpn.ui.theme.HollowLimeBarMuted
+import com.hollow.vpn.ui.theme.HollowObsidian
 import com.hollow.vpn.ui.theme.HollowOrange
 import com.hollow.vpn.ui.theme.JetBrainsMonoFamily
+import com.hollow.vpn.ui.theme.NothingBlack
+import com.hollow.vpn.ui.theme.NothingCanvas
+import com.hollow.vpn.ui.theme.NothingMapDotMuted
+import com.hollow.vpn.ui.theme.NothingPillActiveBg
+import com.hollow.vpn.ui.theme.NothingPillActiveIcon
+import com.hollow.vpn.ui.theme.NothingPillNavBorder
+import com.hollow.vpn.ui.theme.NothingPillNavFill
+import com.hollow.vpn.ui.theme.NothingSurface
+import com.hollow.vpn.ui.theme.NothingSwitchOffBorder
+import com.hollow.vpn.ui.theme.NothingSwitchOffThumb
+import com.hollow.vpn.ui.theme.NothingSwitchOffTrack
+import com.hollow.vpn.ui.theme.NothingTopBtnBorder
 import com.hollow.vpn.ui.theme.SignalMediumDark
 import com.hollow.vpn.ui.theme.SignalMediumLight
 import com.hollow.vpn.ui.theme.SignalStrongDark
@@ -139,7 +157,7 @@ fun HollowBrandShieldLogo(
     size: Dp = 120.dp,
     cornerRadius: Dp = 34.dp,
     backgroundColor: Color = HollowOrange,
-    strokeColor: Color = HollowCream,
+    strokeColor: Color = Color.White,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -195,20 +213,21 @@ fun HollowStatusBrandRow(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(9.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(12.dp)
-                .clip(RoundedCornerShape(3.dp))
+                .size(9.dp)
+                .clip(CircleShape)
                 .background(dotColor)
         )
         Text(
-            text = "Hollow",
-            fontFamily = SpaceGroteskFamily,
+            text = "HOLLOW",
+            fontFamily = DotoDisplayFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            letterSpacing = (-0.4).sp,
+            fontSize = 24.sp,
+            letterSpacing = 0.9.sp,
+            maxLines = 1,
             color = textColor
         )
     }
@@ -218,27 +237,69 @@ fun HollowStatusBrandRow(
 fun HollowTopSquareButton(
     containerColor: Color,
     contentColor: Color,
-    borderColor: Color? = null,
+    borderColor: Color? = NothingTopBtnBorder,
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.(Color) -> Unit
 ) {
-    Surface(
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val animContainer by animateColorAsState(
+        targetValue = containerColor,
+        animationSpec = tween(200, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "top_btn_container"
+    )
+    val animBorder by animateColorAsState(
+        targetValue = borderColor ?: NothingTopBtnBorder,
+        animationSpec = tween(200, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "top_btn_border"
+    )
+    val animContent by animateColorAsState(
+        targetValue = contentColor,
+        animationSpec = tween(200, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "top_btn_content"
+    )
+    Box(
         modifier = modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(13.dp))
-            .clickable(role = Role.Button, onClick = onClick)
+            .minimumInteractiveComponentSize()
+            .then(with(com.hollow.vpn.ui.theme.NothingMotion) { Modifier })
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.material3.ripple(),
+                role = Role.Button,
+                onClick = onClick
+            )
             .semantics { this.contentDescription = contentDescription },
-        shape = RoundedCornerShape(13.dp),
-        color = containerColor,
-        border = borderColor?.let { BorderStroke(1.dp, it) }
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        val isPressed by interactionSource.collectIsPressedAsState()
+        val btnScale by animateFloatAsState(
+            targetValue = if (isPressed) 0.90f else 1f,
+            animationSpec = if (isPressed) {
+                tween(80, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase)
+            } else {
+                com.hollow.vpn.ui.theme.NothingMotion.tactileSpring()
+            },
+            label = "top_btn_scale"
+        )
+        Surface(
+            modifier = Modifier
+                .size(40.dp)
+                .graphicsLayer {
+                    scaleX = btnScale
+                    scaleY = btnScale
+                },
+            shape = CircleShape,
+            color = animContainer,
+            border = BorderStroke(1.dp, animBorder)
         ) {
-            content(contentColor)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                content(animContent)
+            }
         }
     }
 }
@@ -309,78 +370,154 @@ fun HollowBottomNavigationBar(
     onSelectSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    val isDarkPhaseBg = backgroundColor == HollowForest || backgroundColor == HollowObsidian
+    val capsuleFill = when (backgroundColor) {
+        HollowForest -> HollowForestCard
+        HollowObsidian -> Color(0xFF141417)
+        else -> NothingPillNavFill
+    }
+    val capsuleBorder = when (backgroundColor) {
+        HollowForest -> HollowForestDivider
+        HollowObsidian -> Color(0xFF26262C)
+        else -> NothingPillNavBorder
+    }
+    val activePillBg = if (isDarkPhaseBg) Color.White else NothingPillActiveBg
+    val activeIconTint = if (isDarkPhaseBg) NothingBlack else NothingPillActiveIcon
+
+    val animBg by animateColorAsState(
+        targetValue = backgroundColor,
+        animationSpec = tween(260, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "nav_bar_bg"
+    )
+    val animCapsuleFill by animateColorAsState(
+        targetValue = capsuleFill,
+        animationSpec = tween(260, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "nav_capsule_fill"
+    )
+    val animCapsuleBorder by animateColorAsState(
+        targetValue = capsuleBorder,
+        animationSpec = tween(260, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "nav_capsule_border"
+    )
+    val animActivePillBg by animateColorAsState(
+        targetValue = activePillBg,
+        animationSpec = tween(240, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "nav_active_pill"
+    )
+
+    val selectedIndex = when (selectedTab) {
+        HollowBottomTab.CONNECT -> 0
+        HollowBottomTab.SERVERS -> 1
+        HollowBottomTab.SETTINGS -> 2
+    }
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(backgroundColor)
+            .background(animBg)
             .navigationBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
     ) {
-        HorizontalDivider(thickness = 1.dp, color = borderColor)
-        Row(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(66.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .widthIn(max = 352.dp)
+                .height(58.dp),
+            shape = CircleShape,
+            color = animCapsuleFill,
+            border = BorderStroke(1.dp, animCapsuleBorder)
         ) {
-            HollowBottomNavItem(
-                label = "Connect",
-                selected = selectedTab == HollowBottomTab.CONNECT,
-                activeIndicatorColor = activeIndicatorColor,
-                activeContentColor = activeContentColor,
-                inactiveContentColor = inactiveContentColor,
-                onClick = onSelectConnect,
+            BoxWithConstraints(
                 modifier = Modifier
-                    .weight(1f)
-                    .testTag("nav_tab_connect")
-            ) { tint ->
-                Icon(
-                    imageVector = Icons.Rounded.PowerSettingsNew,
-                    contentDescription = "Connect",
-                    tint = tint,
-                    modifier = Modifier.size(21.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 7.dp, vertical = 6.dp)
+            ) {
+                val itemGap = 6.dp
+                val slotWidth = ((maxWidth - itemGap * 2) / 3f).coerceAtLeast(1.dp)
+                val targetIndicatorOffset = (slotWidth + itemGap) * selectedIndex
+                val animatedIndicatorOffset by animateDpAsState(
+                    targetValue = targetIndicatorOffset,
+                    animationSpec = spring(
+                        dampingRatio = 0.78f,
+                        stiffness = 460f
+                    ),
+                    label = "nav_capsule_glide"
                 )
-            }
 
-            HollowBottomNavItem(
-                label = "Servers",
-                selected = selectedTab == HollowBottomTab.SERVERS,
-                activeIndicatorColor = activeIndicatorColor,
-                activeContentColor = activeContentColor,
-                inactiveContentColor = inactiveContentColor,
-                onClick = onSelectServers,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("nav_tab_servers")
-            ) { tint ->
-                Icon(
-                    imageVector = Icons.Outlined.Dns,
-                    contentDescription = "Servers",
-                    tint = tint,
-                    modifier = Modifier.size(20.dp)
+                // Gliding Nothing OS 3.0 active capsule indicator
+                Box(
+                    modifier = Modifier
+                        .offset(x = animatedIndicatorOffset)
+                        .width(slotWidth)
+                        .fillMaxHeight()
+                        .clip(CircleShape)
+                        .background(animActivePillBg)
                 )
-            }
 
-            HollowBottomNavItem(
-                label = "Settings",
-                selected = selectedTab == HollowBottomTab.SETTINGS,
-                activeIndicatorColor = activeIndicatorColor,
-                activeContentColor = activeContentColor,
-                inactiveContentColor = inactiveContentColor,
-                onClick = onSelectSettings,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("nav_tab_settings")
-            ) { tint ->
-                Icon(
-                    imageVector = if (selectedTab == HollowBottomTab.SETTINGS) {
-                        Icons.Rounded.Settings
-                    } else {
-                        Icons.Outlined.Settings
-                    },
-                    contentDescription = "Settings",
-                    tint = tint,
-                    modifier = Modifier.size(21.dp)
-                )
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(itemGap)
+                ) {
+                    HollowBottomNavItem(
+                        label = "Connect",
+                        selected = selectedTab == HollowBottomTab.CONNECT,
+                        activeIconColor = activeIconTint,
+                        inactiveContentColor = inactiveContentColor,
+                        onClick = onSelectConnect,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("nav_tab_connect")
+                    ) { tint ->
+                        Icon(
+                            imageVector = Icons.Rounded.PowerSettingsNew,
+                            contentDescription = "Connect",
+                            tint = tint,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    HollowBottomNavItem(
+                        label = "Servers",
+                        selected = selectedTab == HollowBottomTab.SERVERS,
+                        activeIconColor = activeIconTint,
+                        inactiveContentColor = inactiveContentColor,
+                        onClick = onSelectServers,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("nav_tab_servers")
+                    ) { tint ->
+                        Icon(
+                            imageVector = Icons.Outlined.Dns,
+                            contentDescription = "Servers",
+                            tint = tint,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    HollowBottomNavItem(
+                        label = "Settings",
+                        selected = selectedTab == HollowBottomTab.SETTINGS,
+                        activeIconColor = activeIconTint,
+                        inactiveContentColor = inactiveContentColor,
+                        onClick = onSelectSettings,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("nav_tab_settings")
+                    ) { tint ->
+                        Icon(
+                            imageVector = if (selectedTab == HollowBottomTab.SETTINGS) {
+                                Icons.Rounded.Settings
+                            } else {
+                                Icons.Outlined.Settings
+                            },
+                            contentDescription = "Settings",
+                            tint = tint,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -390,51 +527,55 @@ fun HollowBottomNavigationBar(
 private fun HollowBottomNavItem(
     label: String,
     selected: Boolean,
-    activeIndicatorColor: Color,
-    activeContentColor: Color,
+    activeIconColor: Color,
     inactiveContentColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: @Composable (Color) -> Unit
 ) {
-    val contentColor = if (selected) activeContentColor else inactiveContentColor
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val iconTint by animateColorAsState(
+        targetValue = if (selected) activeIconColor else inactiveContentColor,
+        animationSpec = tween(durationMillis = 200, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
+        label = "nav_pill_tint"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = when {
+            isPressed -> 0.86f
+            selected -> 1.08f
+            else -> 0.96f
+        },
+        animationSpec = com.hollow.vpn.ui.theme.NothingMotion.tactileSpring(),
+        label = "nav_icon_scale"
+    )
     Box(
         modifier = modifier
             .fillMaxHeight()
             .minimumInteractiveComponentSize()
-            .clickable(role = Role.Tab, onClick = onClick),
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Tab,
+                onClick = onClick
+            )
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center
     ) {
-        if (selected) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .width(26.dp)
-                    .height(2.5.dp)
-                    .background(activeIndicatorColor)
-            )
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.graphicsLayer {
+                scaleX = iconScale
+                scaleY = iconScale
+            }
         ) {
-            icon(contentColor)
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                    fontSize = 12.sp
-                ),
-                color = contentColor,
-                maxLines = 1
-            )
+            icon(iconTint)
         }
     }
 }
 
 /**
- * Interactive slide-to-connect / slide-to-disconnect pill matching redesigned .slide component.
+ * Interactive Nothing OS slide-to-connect / slide-to-disconnect pill.
  */
 @Composable
 fun HollowSlideActionPill(
@@ -444,32 +585,51 @@ fun HollowSlideActionPill(
     arrowColor: Color,
     labelColor: Color,
     onSlideComplete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    borderColor: Color = HollowCreamDivider
 ) {
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    val thumbSize = 56.dp
+    val thumbSize = 46.dp
     val trackPadding = 6.dp
 
     val nudgeMotion = rememberInfiniteTransition(label = "slide_nudge")
     val nudgeOffsetDp by nudgeMotion.animateFloat(
         initialValue = 0f,
-        targetValue = 14f,
+        targetValue = 6f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 850, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "slide_nudge_x"
     )
 
+    val wavePhase by nudgeMotion.animateFloat(
+        initialValue = 0f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1350, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "slide_dots_wave"
+    )
+
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(68.dp)
-            .clip(RoundedCornerShape(34.dp))
+            .height(58.dp)
+            .clip(RoundedCornerShape(29.dp))
             .background(trackColor)
-            .clickable(role = Role.Button, onClick = onSlideComplete)
+            .border(1.dp, borderColor, RoundedCornerShape(29.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.material3.ripple(),
+                role = Role.Button,
+                onClick = onSlideComplete
+            )
             .semantics { contentDescription = label }
     ) {
         val maxOffsetPx = with(density) {
@@ -480,27 +640,69 @@ fun HollowSlideActionPill(
         val nudgePx = with(density) { nudgeOffsetDp.dp.toPx() }
         val nudgeFactor = (1f - progress * 10f).coerceIn(0f, 1f)
 
+        // Progressive Nothing OS track fill glow while dragging
+        if (progress > 0.01f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(with(density) { (offsetX.value + thumbSize.toPx() + trackPadding.toPx() * 2).toDp() })
+                    .clip(RoundedCornerShape(29.dp))
+                    .background(thumbColor.copy(alpha = 0.14f + progress * 0.22f))
+            )
+        }
+
         Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp
-            ),
+            text = label.uppercase(),
+            fontFamily = DotoDisplayFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.5.sp,
+            letterSpacing = 0.8.sp,
             color = labelColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(start = 34.dp)
+                .padding(start = 58.dp, end = 38.dp)
                 .alpha((1f - progress * 1.45f).coerceIn(0f, 1f))
         )
 
+        // Sequential Nothing Glyph 3-dot wave cue
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 20.dp)
+                .alpha((1f - progress * 1.8f).coerceIn(0f, 1f)),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(3) { idx ->
+                val dist = abs(wavePhase - idx)
+                val pulseBoost = (1f - dist.coerceIn(0f, 1f))
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .graphicsLayer {
+                            val s = 0.85f + pulseBoost * 0.35f
+                            scaleX = s
+                            scaleY = s
+                        }
+                        .clip(CircleShape)
+                        .background(labelColor.copy(alpha = 0.22f + pulseBoost * 0.65f))
+                )
+            }
+        }
+
+        val thumbScale = 1f + progress * 0.06f
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(horizontal = trackPadding)
                 .offset { IntOffset((offsetX.value + nudgePx * nudgeFactor).roundToInt(), 0) }
                 .size(thumbSize)
+                .graphicsLayer {
+                    scaleX = thumbScale
+                    scaleY = thumbScale
+                }
                 .clip(CircleShape)
                 .background(thumbColor)
                 .pointerInput(maxOffsetPx, label) {
@@ -543,16 +745,16 @@ fun HollowSlideActionPill(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                 contentDescription = null,
                 tint = arrowColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
     }
 }
 
 /**
- * Editorial Hollow toggle switch matching Pages 5 & 6:
- * ON: dark #141413 track with #FF4422 circular thumb
- * OFF: #F7F4ED track with thin border and muted gray thumb
+ * Nothing OS toggle switch:
+ * ON: Signature Nothing Red track with crisp white circular dot thumb
+ * OFF: Matte black track with thin graphite border and muted gray dot thumb
  */
 @Composable
 fun HollowSwitch(
@@ -560,34 +762,49 @@ fun HollowSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
     val trackColor by animateColorAsState(
-        targetValue = if (checked) HollowInk else HollowCream,
-        animationSpec = tween(180),
+        targetValue = if (checked) HollowOrange else NothingSwitchOffTrack,
+        animationSpec = tween(200, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
         label = "hollow_switch_track"
     )
     val borderColor by animateColorAsState(
-        targetValue = if (checked) HollowInk else Color(0xFFC2BCB0),
-        animationSpec = tween(180),
+        targetValue = if (checked) HollowOrange else NothingSwitchOffBorder,
+        animationSpec = tween(200, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
         label = "hollow_switch_border"
     )
     val thumbColor by animateColorAsState(
-        targetValue = if (checked) HollowOrange else Color(0xFF837E75),
-        animationSpec = tween(180),
+        targetValue = if (checked) Color.White else NothingSwitchOffThumb,
+        animationSpec = tween(200, easing = com.hollow.vpn.ui.theme.NothingMotion.FluidEase),
         label = "hollow_switch_thumb"
     )
     val thumbOffset by animateDpAsState(
         targetValue = if (checked) 22.dp else 0.dp,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium
+            dampingRatio = 0.68f,
+            stiffness = 520f
         ),
         label = "hollow_switch_offset"
+    )
+    val thumbScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1f,
+        animationSpec = com.hollow.vpn.ui.theme.NothingMotion.tactileSpring(),
+        label = "hollow_switch_scale"
     )
 
     Box(
         modifier = modifier
             .minimumInteractiveComponentSize()
-            .clickable(role = Role.Switch) { onCheckedChange(!checked) },
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Switch
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onCheckedChange(!checked)
+            },
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -604,6 +821,10 @@ fun HollowSwitch(
                 modifier = Modifier
                     .offset(x = thumbOffset)
                     .size(20.dp)
+                    .graphicsLayer {
+                        scaleX = thumbScale
+                        scaleY = thumbScale
+                    }
                     .clip(CircleShape)
                     .background(thumbColor)
             )
@@ -966,7 +1187,7 @@ fun HollowConnectedSpeedPair(
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 26.sp,
-                        color = HollowCream,
+                        color = HollowDarkInk,
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -1005,7 +1226,7 @@ fun HollowConnectedSpeedPair(
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 26.sp,
-                        color = HollowCream,
+                        color = HollowDarkInk,
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -1138,7 +1359,7 @@ fun HollowProtectedTunnelCard(
                         Icon(
                             imageVector = Icons.Outlined.Smartphone,
                             contentDescription = "Your device",
-                            tint = HollowCream,
+                            tint = HollowDarkInk,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -1227,7 +1448,7 @@ fun HollowProtectedTunnelCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = HollowCream,
+                        color = HollowDarkInk,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1289,7 +1510,7 @@ fun HollowProtectedTunnelCard(
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 13.5.sp,
-                        color = HollowCream,
+                        color = HollowDarkInk,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1373,7 +1594,7 @@ fun HollowProtectedSpeedChartCard(
                             fontFamily = JetBrainsMonoFamily,
                             fontWeight = FontWeight.Medium,
                             fontSize = 20.sp,
-                            color = HollowCream,
+                            color = HollowDarkInk,
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.width(5.dp))
@@ -1417,7 +1638,7 @@ fun HollowProtectedSpeedChartCard(
                             fontFamily = JetBrainsMonoFamily,
                             fontWeight = FontWeight.Medium,
                             fontSize = 20.sp,
-                            color = HollowCream,
+                            color = HollowDarkInk,
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.width(5.dp))
@@ -1631,6 +1852,7 @@ fun HollowDisconnectedExposureCard(
     tunModeEnabled: Boolean,
     ispLabel: String = "Detecting…",
     mapHeight: Dp = 132.dp,
+    fillCanvasHeight: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val motion = rememberInfiniteTransition(label = "exposure_map_motion")
@@ -1664,7 +1886,7 @@ fun HollowDisconnectedExposureCard(
         color = HollowCreamSurface,
         border = BorderStroke(1.dp, HollowCreamDivider)
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = if (fillCanvasHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1686,46 +1908,68 @@ fun HollowDisconnectedExposureCard(
                         text = "RIGHT NOW, OTHERS CAN SEE",
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 10.5.sp,
-                        letterSpacing = 1.sp,
+                        fontSize = 9.5.sp,
+                        letterSpacing = 0.9.sp,
                         color = HollowOrange,
                         maxLines = 1
                     )
                 }
             }
 
+            val mapInkColor = HollowInk
+            val mapCanvasColor = NothingCanvas
+            val mapDotMutedColor = NothingMapDotMuted
+
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(mapHeight)
+                    .then(
+                        if (fillCanvasHeight) {
+                            Modifier.weight(1f)
+                        } else {
+                            Modifier.height(mapHeight)
+                        }
+                    )
                     .padding(horizontal = 12.dp)
             ) {
                 val w = size.width
                 val h = size.height
                 val padX = 10.dp.toPx()
                 val padY = 8.dp.toPx()
-                val mapW = (w - padX * 2f).coerceAtLeast(1f)
-                val mapH = (h - padY * 2f).coerceAtLeast(1f)
+                val availW = (w - padX * 2f).coerceAtLeast(1f)
+                val availH = (h - padY * 2f).coerceAtLeast(1f)
+                val targetRatio = 1.92f
+                val mapW: Float
+                val mapH: Float
+                if (availW / availH > targetRatio) {
+                    mapH = availH
+                    mapW = availH * targetRatio
+                } else {
+                    mapW = availW
+                    mapH = availW / targetRatio
+                }
+                val originOffsetX = (w - mapW) / 2f
+                val originOffsetY = (h - mapH) / 2f
                 val dotRadius = (mapW * 0.0068f).coerceIn(1.6.dp.toPx(), 2.6.dp.toPx())
 
                 val originNorm = if (hasValidOrigin) countryMapCoordinate(originCountryCode) else Offset(0.50f, 0.45f)
-                val originCenter = Offset(padX + originNorm.x * mapW, padY + originNorm.y * mapH)
+                val originCenter = Offset(originOffsetX + originNorm.x * mapW, originOffsetY + originNorm.y * mapH)
 
                 val targetNorm = if (hasValidTarget) countryMapCoordinate(targetCountryCode!!) else null
-                val targetCenter = targetNorm?.let { Offset(padX + it.x * mapW, padY + it.y * mapH) }
+                val targetCenter = targetNorm?.let { Offset(originOffsetX + it.x * mapW, originOffsetY + it.y * mapH) }
 
                 for (pt in WORLD_DOT_POINTS) {
-                    val px = padX + pt.x * mapW
-                    val py = padY + pt.y * mapH
+                    val px = originOffsetX + pt.x * mapW
+                    val py = originOffsetY + pt.y * mapH
                     val waveDist = abs(pt.x - sweep)
                     val waveBoost = 1f - (waveDist / 0.18f).coerceIn(0f, 1f)
                     val nearOrigin = hasValidOrigin && hypot(pt.x - originNorm.x, pt.y - originNorm.y) < 0.085f
                     val nearTarget = targetNorm != null && hypot(pt.x - targetNorm.x, pt.y - targetNorm.y) < 0.085f
 
                     val dotColor = when {
-                        nearOrigin -> HollowOrange.copy(alpha = 0.55f + 0.30f * waveBoost)
-                        nearTarget -> HollowInk.copy(alpha = 0.48f + 0.25f * waveBoost)
-                        else -> Color(0xFFC5BEB0).copy(alpha = 0.65f + 0.30f * waveBoost)
+                        nearOrigin -> HollowOrange.copy(alpha = 0.65f + 0.35f * waveBoost)
+                        nearTarget -> mapInkColor.copy(alpha = 0.60f + 0.35f * waveBoost)
+                        else -> mapDotMutedColor.copy(alpha = 0.72f + 0.28f * waveBoost)
                     }
                     drawCircle(
                         color = dotColor,
@@ -1746,7 +1990,7 @@ fun HollowDisconnectedExposureCard(
                     }
                     drawPath(
                         path = arcPath,
-                        color = HollowInk.copy(alpha = 0.42f),
+                        color = mapInkColor.copy(alpha = 0.42f),
                         style = Stroke(
                             width = 1.4.dp.toPx(),
                             cap = StrokeCap.Round,
@@ -1781,19 +2025,22 @@ fun HollowDisconnectedExposureCard(
                 // Target VPN exit node marker
                 if (targetCenter != null) {
                     drawCircle(
-                        color = HollowInk,
+                        color = mapInkColor,
                         radius = 5.5.dp.toPx(),
                         center = targetCenter
                     )
                     drawCircle(
-                        color = HollowCream,
+                        color = mapCanvasColor,
                         radius = 2.2.dp.toPx(),
                         center = targetCenter
                     )
                 }
             }
 
-            HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+            NothingDottedDivider(
+                color = HollowCreamDivider,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
             Row(
                 modifier = Modifier
@@ -1812,7 +2059,7 @@ fun HollowDisconnectedExposureCard(
                         text = "ISP PROVIDER",
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 10.sp,
+                        fontSize = 9.5.sp,
                         letterSpacing = 0.8.sp,
                         color = HollowInkSecondary,
                         maxLines = 1
@@ -1822,7 +2069,7 @@ fun HollowDisconnectedExposureCard(
                         text = ispLabel.ifBlank { "Detecting…" },
                         fontFamily = SpaceGroteskFamily,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
+                        fontSize = 12.5.sp,
                         color = HollowInk,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -1832,7 +2079,7 @@ fun HollowDisconnectedExposureCard(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(28.dp)
+                        .height(26.dp)
                         .background(HollowCreamDivider)
                 )
 
@@ -1846,7 +2093,7 @@ fun HollowDisconnectedExposureCard(
                         text = "YOUR LOCATION",
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 10.sp,
+                        fontSize = 9.5.sp,
                         letterSpacing = 0.8.sp,
                         color = HollowInkSecondary,
                         maxLines = 1
@@ -1857,7 +2104,7 @@ fun HollowDisconnectedExposureCard(
                         text = "$originFlag $originLocationLabel",
                         fontFamily = SpaceGroteskFamily,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
+                        fontSize = 12.5.sp,
                         color = HollowInk,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -2232,7 +2479,8 @@ fun HollowVpnLogoCard(
     Surface(
         modifier = modifier.size(cardSize),
         shape = RoundedCornerShape(24.dp),
-        color = HollowInk
+        color = NothingSurface,
+        border = BorderStroke(1.dp, HollowCreamDivider)
     ) {
         Box(
             modifier = Modifier
@@ -2243,15 +2491,15 @@ fun HollowVpnLogoCard(
                 modifier = Modifier
                     .size(cardSize * 0.17f)
                     .align(Alignment.TopStart)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(CircleShape)
                     .background(HollowOrange)
             )
             Text(
                 text = "H",
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = (cardSize.value * 0.44f).sp,
-                color = HollowCream,
+                fontSize = (cardSize.value * 0.46f).sp,
+                color = HollowInk,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .offset(x = (-2).dp, y = 4.dp)
@@ -2265,43 +2513,58 @@ fun FetchingSpinnerRing(
     modifier: Modifier = Modifier,
     size: Dp = 64.dp
 ) {
-    val transition = rememberInfiniteTransition(label = "m3_expressive_loader")
+    val transition = rememberInfiniteTransition(label = "nothing_glyph_loader")
     val rot by transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 6000, easing = LinearEasing),
+            animation = tween(durationMillis = 2800, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "m3_loader_rot"
+        label = "glyph_loader_rot"
     )
+
+    val spinnerInkColor = HollowInk
 
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val center = Offset(this.size.width / 2f, this.size.height / 2f)
-            val r = this.size.minDimension * 0.44f
-            rotate(degrees = rot, pivot = center) {
-                drawPath(
-                    path = buildExpressiveScallopPath(
-                        center = center,
-                        baseRadius = r,
-                        lobeAmplitude = r * 0.10f,
-                        lobes = 8
-                    ),
-                    color = Color(0xFFECE7DD)
-                )
+            val cx = this.size.width / 2f
+            val cy = this.size.height / 2f
+            val r = this.size.minDimension * 0.42f
+            val dotCount = 12
+            rotate(degrees = rot, pivot = Offset(cx, cy)) {
+                for (i in 0 until dotCount) {
+                    val angle = (2.0 * PI * i) / dotCount
+                    val dx = cx + r * cos(angle).toFloat()
+                    val dy = cy + r * sin(angle).toFloat()
+                    val isLead = i == 0
+                    val trailFade = ((dotCount - i).toFloat() / dotCount.toFloat()).coerceIn(0.22f, 1f)
+                    drawCircle(
+                        color = if (isLead) HollowOrange else spinnerInkColor.copy(alpha = trailFade * 0.78f),
+                        radius = if (isLead) 3.4.dp.toPx() else 2.0.dp.toPx(),
+                        center = Offset(dx, dy)
+                    )
+                }
             }
         }
-        CircularProgressIndicator(
-            modifier = Modifier.size(size * 0.52f),
-            color = HollowOrange,
-            trackColor = Color(0xFFE2DDD3),
-            strokeWidth = 3.dp,
-            strokeCap = StrokeCap.Round
-        )
+        Box(
+            modifier = Modifier
+                .size(size * 0.34f)
+                .clip(CircleShape)
+                .border(1.5.dp, HollowCreamDivider, CircleShape)
+                .background(NothingCanvas),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(HollowOrange)
+            )
+        }
     }
 }
 

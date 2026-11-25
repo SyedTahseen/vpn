@@ -6,8 +6,16 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +28,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -73,8 +82,11 @@ import com.hollow.vpn.ui.AddServerTab
 import com.hollow.vpn.ui.components.CameraQrScannerDialog
 import com.hollow.vpn.ui.components.HollowSwitch
 import com.hollow.vpn.ui.components.HollowTopSquareButton
-import com.hollow.vpn.ui.components.HollowUnderlinedTabRow
+import com.hollow.vpn.ui.components.NothingDottedDivider
+import com.hollow.vpn.ui.components.NothingPillTabRow
 import com.hollow.vpn.ui.components.decodeQrFromUri
+import com.hollow.vpn.ui.theme.NothingMotion
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
 import com.hollow.vpn.ui.theme.HollowCreamSurface
@@ -83,6 +95,12 @@ import com.hollow.vpn.ui.theme.HollowInkMuted
 import com.hollow.vpn.ui.theme.HollowInkSecondary
 import com.hollow.vpn.ui.theme.HollowOrange
 import com.hollow.vpn.ui.theme.JetBrainsMonoFamily
+import com.hollow.vpn.ui.theme.NothingCanvas
+import com.hollow.vpn.ui.theme.NothingOnCanvas
+import com.hollow.vpn.ui.theme.NothingSurface
+import com.hollow.vpn.ui.theme.NothingSurfaceElevated
+import com.hollow.vpn.ui.theme.NothingTopBtnBorder
+import com.hollow.vpn.ui.theme.NothingTopBtnFill
 import com.hollow.vpn.ui.theme.SpaceGroteskFamily
 
 private val MANUAL_PROTOCOL_PRESETS = listOf("VLESS", "VMess", "Trojan", "Shadowsocks", "Hysteria2")
@@ -175,8 +193,9 @@ fun AddServerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(HollowCream)
+            .background(NothingCanvas)
             .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(bottom = bottomContentPadding)
     ) {
         Column(
@@ -188,14 +207,15 @@ fun AddServerScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Page 5 Top Header: < + "Add server"
+            // Top Header: Circular hairline Back + uppercase Doto "ADD SERVER"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 HollowTopSquareButton(
-                    containerColor = HollowCreamSurface,
-                    contentColor = HollowInk,
+                    containerColor = NothingTopBtnFill,
+                    contentColor = NothingOnCanvas,
+                    borderColor = NothingTopBtnBorder,
                     contentDescription = "Back",
                     onClick = onBack,
                     modifier = Modifier.testTag("btn_navigate_back")
@@ -204,32 +224,32 @@ fun AddServerScreen(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                         contentDescription = null,
                         tint = tint,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(21.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = "Add server",
-                    fontFamily = SpaceGroteskFamily,
+                    text = "ADD SERVER",
+                    fontFamily = DotoDisplayFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
-                    letterSpacing = (-0.4).sp,
-                    color = HollowInk
+                    letterSpacing = 0.9.sp,
+                    maxLines = 1,
+                    color = NothingOnCanvas
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Page 5 Underlined Tabs (Subscription, Manual, QR code)
-            HollowUnderlinedTabRow(
+            // Nothing OS Pill Tabs (SUBSCRIPTION, MANUAL, QR CODE)
+            NothingPillTabRow(
                 tabs = tabs.map { it.second },
                 selectedIndex = selectedTabIndex,
                 onSelectTab = { idx -> onSelectTab(tabs[idx].first) },
                 tabTestTags = tabs.map { "tab_${it.first.name.lowercase()}" },
-                tabFontSize = 13.5.sp,
-                tabSpacing = 18.dp
+                fontSizeSp = 10.5f
             )
 
             Column(
@@ -237,9 +257,26 @@ fun AddServerScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                when (activeTab) {
+                AnimatedContent(
+                    targetState = activeTab,
+                    transitionSpec = {
+                        val ease = NothingMotion.FluidEase
+                        val fromIdx = tabs.indexOfFirst { it.first == initialState }.coerceAtLeast(0)
+                        val toIdx = tabs.indexOfFirst { it.first == targetState }.coerceAtLeast(0)
+                        val dir = if (toIdx >= fromIdx) 1 else -1
+                        (slideInHorizontally(tween(240, easing = ease)) { dir * (it * 0.12f).toInt() } +
+                            fadeIn(tween(200, easing = ease)))
+                            .togetherWith(
+                                slideOutHorizontally(tween(200, easing = ease)) { -dir * (it * 0.10f).toInt() } +
+                                    fadeOut(tween(150))
+                            )
+                    },
+                    label = "add_server_tab_motion"
+                ) { tab ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                when (tab) {
                     AddServerTab.SUBSCRIPTION -> {
                         Text(
                             text = "SUBSCRIPTION LINK",
@@ -256,22 +293,22 @@ fun AddServerScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(58.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = HollowCream,
-                            border = BorderStroke(1.5.dp, HollowInk)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            color = HollowCreamSurface,
+                            border = BorderStroke(1.2.dp, HollowCreamDivider)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 16.dp),
+                                    .padding(horizontal = 14.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 if (subscriptionUrl.isEmpty()) {
                                     Text(
                                         text = "https://example.com/sub",
                                         fontFamily = JetBrainsMonoFamily,
-                                        fontSize = 14.5.sp,
+                                        fontSize = 13.5.sp,
                                         color = HollowInkMuted
                                     )
                                 }
@@ -281,7 +318,7 @@ fun AddServerScreen(
                                     singleLine = true,
                                     textStyle = TextStyle(
                                         fontFamily = JetBrainsMonoFamily,
-                                        fontSize = 14.5.sp,
+                                        fontSize = 13.5.sp,
                                         color = HollowInk
                                     ),
                                     cursorBrush = SolidColor(HollowOrange),
@@ -292,33 +329,33 @@ fun AddServerScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Primary CTA: "Add & fetch"
                         Button(
                             onClick = { onAddAndFetchSubscription(subscriptionUrl) },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = HollowInk,
                                 contentColor = HollowCream
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp)
+                                .height(50.dp)
                                 .testTag("btn_add_and_fetch")
                         ) {
                             Text(
                                 text = "Add & fetch",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp
+                                    fontSize = 13.5.sp
                                 ),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         // Secondary CTA: "Paste from clipboard"
                         OutlinedButton(
@@ -332,40 +369,40 @@ fun AddServerScreen(
                                     onImportClipboardText(pasted)
                                 }
                             },
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.2.dp, HollowInk),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.dp, HollowCreamDivider),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = Color.Transparent,
                                 contentColor = HollowInk
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp)
+                                .height(50.dp)
                                 .testTag("card_import_clipboard")
                         ) {
                             Text(
                                 text = "Paste from clipboard",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp
+                                    fontSize = 13.5.sp
                                 ),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(34.dp))
+                        Spacer(modifier = Modifier.height(26.dp))
 
                         Text(
                             text = "OPTIONS",
                             fontFamily = JetBrainsMonoFamily,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             letterSpacing = 1.2.sp,
                             color = HollowInkSecondary
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         // Row 1: Auto update
                         Row(
@@ -375,26 +412,19 @@ fun AddServerScreen(
                                 .clickable {
                                     onUpdateSettings { it.copy(subAutoUpdate = !settings.subAutoUpdate) }
                                 }
-                                .padding(vertical = 14.dp),
+                                .padding(vertical = 11.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Auto update",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 16.sp
-                                    ),
-                                    color = HollowInk
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Refresh in the background",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                                    color = HollowInkSecondary
-                                )
-                            }
+                            Text(
+                                text = "Auto update",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.5.sp
+                                ),
+                                color = HollowInk,
+                                modifier = Modifier.weight(1f)
+                            )
                             HollowSwitch(
                                 checked = settings.subAutoUpdate,
                                 onCheckedChange = { enabled ->
@@ -404,7 +434,7 @@ fun AddServerScreen(
                             )
                         }
 
-                        HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+                        NothingDottedDivider()
 
                         // Row 2: Update interval
                         Row(
@@ -412,7 +442,7 @@ fun AddServerScreen(
                                 .fillMaxWidth()
                                 .minimumInteractiveComponentSize()
                                 .clickable(role = Role.Button) { showIntervalPicker = true }
-                                .padding(vertical = 16.dp)
+                                .padding(vertical = 12.dp)
                                 .testTag("row_sub_update_interval"),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -420,32 +450,32 @@ fun AddServerScreen(
                             Text(
                                 text = "Update interval",
                                 style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 16.sp
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.5.sp
                                 ),
                                 color = HollowInk,
                                 modifier = Modifier.weight(1f)
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
                                     text = settings.subUpdateInterval,
                                     fontFamily = JetBrainsMonoFamily,
-                                    fontSize = 14.5.sp,
+                                    fontSize = 12.5.sp,
                                     color = HollowInk
                                 )
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                                     contentDescription = null,
                                     tint = HollowInkSecondary,
-                                    modifier = Modifier.size(19.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
 
-                        HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+                        NothingDottedDivider()
 
                         // Row 3: Replace existing
                         Row(
@@ -455,26 +485,19 @@ fun AddServerScreen(
                                 .clickable {
                                     onUpdateSettings { it.copy(subReplaceExisting = !settings.subReplaceExisting) }
                                 }
-                                .padding(vertical = 14.dp),
+                                .padding(vertical = 11.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Replace existing",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 16.sp
-                                    ),
-                                    color = HollowInk
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Remove old servers first",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                                    color = HollowInkSecondary
-                                )
-                            }
+                            Text(
+                                text = "Replace existing",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.5.sp
+                                ),
+                                color = HollowInk,
+                                modifier = Modifier.weight(1f)
+                            )
                             HollowSwitch(
                                 checked = settings.subReplaceExisting,
                                 onCheckedChange = { enabled ->
@@ -484,7 +507,7 @@ fun AddServerScreen(
                             )
                         }
 
-                        HorizontalDivider(thickness = 1.dp, color = HollowCreamDivider)
+                        NothingDottedDivider()
                     }
 
                     AddServerTab.MANUAL -> {
@@ -562,9 +585,16 @@ fun AddServerScreen(
                                             }
                                         } else null,
                                         colors = FilterChipDefaults.filterChipColors(
+                                            containerColor = NothingSurface,
+                                            labelColor = HollowInkSecondary,
                                             selectedContainerColor = HollowInk,
                                             selectedLabelColor = HollowCream,
                                             selectedLeadingIconColor = HollowOrange
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            enabled = true,
+                                            selected = selected,
+                                            borderColor = HollowCreamDivider
                                         ),
                                         shape = RoundedCornerShape(12.dp)
                                     )
@@ -614,9 +644,16 @@ fun AddServerScreen(
                                             }
                                         } else null,
                                         colors = FilterChipDefaults.filterChipColors(
+                                            containerColor = NothingSurface,
+                                            labelColor = HollowInkSecondary,
                                             selectedContainerColor = HollowInk,
                                             selectedLabelColor = HollowCream,
                                             selectedLeadingIconColor = HollowOrange
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            enabled = true,
+                                            selected = selected,
+                                            borderColor = HollowCreamDivider
                                         ),
                                         shape = RoundedCornerShape(12.dp)
                                     )
@@ -782,7 +819,8 @@ fun AddServerScreen(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            color = HollowCreamSurface
+                            color = HollowCreamSurface,
+                            border = BorderStroke(1.dp, HollowCreamDivider)
                         ) {
                             Column(
                                 modifier = Modifier
@@ -795,13 +833,14 @@ fun AddServerScreen(
                                     modifier = Modifier
                                         .size(72.dp)
                                         .clip(RoundedCornerShape(18.dp))
-                                        .background(HollowInk),
+                                        .background(NothingSurfaceElevated)
+                                        .border(1.dp, HollowCreamDivider, RoundedCornerShape(18.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.QrCodeScanner,
                                         contentDescription = null,
-                                        tint = HollowCream,
+                                        tint = HollowInk,
                                         modifier = Modifier.size(34.dp)
                                     )
                                 }
@@ -858,7 +897,7 @@ fun AddServerScreen(
                                             )
                                         },
                                         shape = RoundedCornerShape(14.dp),
-                                        border = BorderStroke(1.2.dp, HollowInk),
+                                        border = BorderStroke(1.dp, HollowCreamDivider),
                                         colors = ButtonDefaults.outlinedButtonColors(
                                             contentColor = HollowInk
                                         ),
@@ -940,6 +979,8 @@ fun AddServerScreen(
                             }
                         }
                     }
+                }
+                }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))

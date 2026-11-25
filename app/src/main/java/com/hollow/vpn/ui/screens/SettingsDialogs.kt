@@ -11,6 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,15 +96,21 @@ import com.hollow.vpn.BuildConfig
 import com.hollow.vpn.data.AppUpdateState
 import com.hollow.vpn.data.ServerEntity
 import com.hollow.vpn.ui.components.HollowBrandShieldLogo
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
 import com.hollow.vpn.ui.theme.HollowCreamSurface
 import com.hollow.vpn.ui.theme.HollowInk
 import com.hollow.vpn.ui.theme.HollowInkMuted
 import com.hollow.vpn.ui.theme.HollowInkSecondary
-import com.hollow.vpn.ui.theme.HollowLime
 import com.hollow.vpn.ui.theme.HollowOrange
 import com.hollow.vpn.ui.theme.JetBrainsMonoFamily
+import com.hollow.vpn.ui.theme.NothingBorder
+import com.hollow.vpn.ui.theme.NothingCanvas
+import com.hollow.vpn.ui.theme.NothingMatrixGreen
+import com.hollow.vpn.ui.theme.NothingRed
+import com.hollow.vpn.ui.theme.NothingSurface
+import com.hollow.vpn.ui.theme.NothingSurfaceElevated
 import com.hollow.vpn.ui.theme.SpaceGroteskFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -134,7 +141,7 @@ internal fun XrayDiagnosticLogsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(24.dp),
         icon = {
             Icon(
@@ -146,7 +153,7 @@ internal fun XrayDiagnosticLogsDialog(
         title = {
             Text(
                 text = "Diagnostic logs",
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
                 color = HollowInk
             )
@@ -157,7 +164,8 @@ internal fun XrayDiagnosticLogsDialog(
                     .fillMaxWidth()
                     .height(340.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = HollowInk
+                color = NothingCanvas,
+                border = BorderStroke(1.dp, NothingBorder)
             ) {
                 if (logs.isEmpty()) {
                     Box(
@@ -169,7 +177,7 @@ internal fun XrayDiagnosticLogsDialog(
                         Text(
                             text = "No diagnostic events captured yet.\nConnect to a server to inspect live Xray core status and tunnel verification logs.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF9E998E)
+                            color = HollowInkSecondary
                         )
                     }
                 } else {
@@ -191,7 +199,7 @@ internal fun XrayDiagnosticLogsDialog(
                                     color = if (line.contains("ERROR:", ignoreCase = true)) {
                                         HollowOrange
                                     } else {
-                                        HollowCream
+                                        HollowInk
                                     }
                                 )
                             )
@@ -299,7 +307,7 @@ internal fun PerAppProxyPickerDialog(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     ) {
         Column(
@@ -562,8 +570,9 @@ internal fun PerAppProxyPickerDialog(
                 Button(
                     onClick = onDismiss,
                     shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, NothingBorder),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = HollowCreamSurface,
+                        containerColor = NothingSurface,
                         contentColor = HollowInk
                     ),
                     modifier = Modifier
@@ -678,7 +687,7 @@ fun SettingOptionPickerDialog(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     ) {
         Column(
@@ -690,7 +699,7 @@ fun SettingOptionPickerDialog(
         ) {
             Text(
                 text = title,
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
                 color = HollowInk
@@ -713,8 +722,8 @@ fun SettingOptionPickerDialog(
                             .clip(RoundedCornerShape(16.dp))
                             .clickable(role = Role.RadioButton) { onSelect(option.value) },
                         shape = RoundedCornerShape(16.dp),
-                        color = if (isSelected) HollowInk else HollowCreamSurface,
-                        border = if (isSelected) null else BorderStroke(1.dp, HollowCreamDivider)
+                        color = if (isSelected) HollowInk else NothingSurface,
+                        border = if (isSelected) null else BorderStroke(1.dp, NothingBorder)
                     ) {
                         Row(
                             modifier = Modifier
@@ -742,7 +751,7 @@ fun SettingOptionPickerDialog(
                                     text = option.subtitle,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected) {
-                                        HollowCream.copy(alpha = 0.78f)
+                                        HollowCream.copy(alpha = 0.72f)
                                     } else {
                                         HollowInkSecondary
                                     }
@@ -758,8 +767,9 @@ fun SettingOptionPickerDialog(
             Button(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, NothingBorder),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = HollowCreamSurface,
+                    containerColor = NothingSurface,
                     contentColor = HollowInk
                 ),
                 modifier = Modifier
@@ -782,12 +792,12 @@ fun RawXrayJsonEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(24.dp),
         title = {
             Text(
                 text = "${server.countryName} · Raw Config",
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
                 color = HollowInk
             )
@@ -800,6 +810,14 @@ fun RawXrayJsonEditorDialog(
                     fontFamily = JetBrainsMonoFamily,
                     fontSize = 12.sp,
                     color = HollowInk
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = NothingCanvas,
+                    unfocusedContainerColor = NothingCanvas,
+                    focusedBorderColor = HollowInk,
+                    unfocusedBorderColor = NothingBorder,
+                    focusedTextColor = HollowInk,
+                    unfocusedTextColor = HollowInk
                 ),
                 shape = RoundedCornerShape(14.dp),
                 minLines = 10,
@@ -840,7 +858,7 @@ internal fun AboutHollowSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
@@ -851,23 +869,25 @@ internal fun AboutHollowSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 26.dp)
         ) {
-            // Obsidian Hero Showcase Card
+            // Nothing OS Glyph Showcase Card
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
-                color = HollowInk
+                color = NothingSurface,
+                border = BorderStroke(1.dp, NothingBorder)
             ) {
+                val sheetRingInk = HollowInk
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Canvas(modifier = Modifier.matchParentSize()) {
                         val center = Offset(size.width * 0.88f, size.height * 0.25f)
                         drawCircle(
-                            color = HollowOrange.copy(alpha = 0.14f),
+                            color = NothingRed.copy(alpha = 0.25f),
                             radius = 68.dp.toPx(),
                             center = center,
                             style = Stroke(width = 1.dp.toPx())
                         )
                         drawCircle(
-                            color = HollowLime.copy(alpha = 0.09f),
+                            color = sheetRingInk.copy(alpha = 0.08f),
                             radius = 104.dp.toPx(),
                             center = center,
                             style = Stroke(width = 1.dp.toPx())
@@ -887,26 +907,29 @@ internal fun AboutHollowSheet(
                                 modifier = Modifier
                                     .size(52.dp)
                                     .clip(RoundedCornerShape(15.dp))
-                                    .background(Color(0xFF23221E)),
+                                    .background(NothingSurfaceElevated)
+                                    .border(1.dp, NothingBorder, RoundedCornerShape(15.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 HollowBrandShieldLogo(
-                                    strokeColor = HollowCream,
+                                    backgroundColor = NothingSurfaceElevated,
+                                    strokeColor = HollowInk,
                                     modifier = Modifier.size(30.dp)
                                 )
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Hollow VPN",
-                                    fontFamily = SpaceGroteskFamily,
+                                    text = "HOLLOW VPN",
+                                    fontFamily = DotoDisplayFamily,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 22.sp,
-                                    color = HollowCream
+                                    fontSize = 21.sp,
+                                    letterSpacing = 0.6.sp,
+                                    color = HollowInk
                                 )
                                 Text(
                                     text = "Stealth Xray Multi-Protocol Tunnel",
                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp),
-                                    color = Color(0xFFA7A298)
+                                    color = HollowInkSecondary
                                 )
                             }
                             Surface(
@@ -932,7 +955,7 @@ internal fun AboutHollowSheet(
                                 fontSize = 13.sp,
                                 lineHeight = 19.sp
                             ),
-                            color = Color(0xFFD0CBC0)
+                            color = HollowInkSecondary
                         )
                     }
                 }
@@ -1027,7 +1050,7 @@ internal fun AboutHollowSheet(
                         onCopyBuildInfo("Build info copied")
                     },
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.2.dp, HollowInk),
+                    border = BorderStroke(1.dp, NothingBorder),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = HollowInk),
                     modifier = Modifier
                         .weight(1f)
@@ -1091,13 +1114,14 @@ private fun AboutFeatureRow(
             modifier = Modifier
                 .size(34.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(HollowInk),
+                .background(NothingSurfaceElevated)
+                .border(1.dp, NothingBorder, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = HollowCream,
+                tint = HollowInk,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -1161,7 +1185,7 @@ internal fun AppUpdateCheckDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(24.dp),
         icon = {
             when (updateState) {
@@ -1177,13 +1201,13 @@ internal fun AppUpdateCheckDialog(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF15803D).copy(alpha = 0.14f)),
+                            .background(NothingMatrixGreen.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF15803D),
+                            tint = NothingMatrixGreen,
                             modifier = Modifier.size(26.dp)
                         )
                     }
@@ -1230,7 +1254,7 @@ internal fun AppUpdateCheckDialog(
                     is AppUpdateState.UpdateAvailable -> "Update available"
                     is AppUpdateState.Error -> "Update check failed"
                 },
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
                 color = HollowInk
             )
@@ -1273,7 +1297,8 @@ internal fun AppUpdateCheckDialog(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            color = HollowInk
+                            color = NothingSurface,
+                            border = BorderStroke(1.dp, NothingBorder)
                         ) {
                             Column(
                                 modifier = Modifier.padding(14.dp),
@@ -1284,12 +1309,12 @@ internal fun AppUpdateCheckDialog(
                                     fontFamily = JetBrainsMonoFamily,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 13.5.sp,
-                                    color = HollowLime
+                                    color = NothingMatrixGreen
                                 )
                                 Text(
                                     text = updateState.releaseNotes.take(260),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = HollowCream.copy(alpha = 0.85f)
+                                    color = HollowInkSecondary
                                 )
                             }
                         }

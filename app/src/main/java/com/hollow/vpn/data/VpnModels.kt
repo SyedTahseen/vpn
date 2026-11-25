@@ -130,7 +130,8 @@ data class AppSettingsState(
     val smartSwitchEnabled: Boolean = false,
     val mirrorsEnabled: Boolean = false,
     val strictTlsEnabled: Boolean = false,
-    val domesticCountryCode: String = "IR"
+    val domesticCountryCode: String = "IR",
+    val themeMode: String = "Dark"
 ) {
     companion object {
         const val DEFAULT_SUBSCRIPTION_URL = ""
@@ -183,7 +184,8 @@ class VpnPreferencesStore(context: Context) {
             smartSwitchEnabled = prefs.getBoolean("smart_switch_enabled", false),
             mirrorsEnabled = prefs.getBoolean("mirrors_enabled", false),
             strictTlsEnabled = prefs.getBoolean("strict_tls_enabled", false),
-            domesticCountryCode = prefs.getString("domestic_country_code", "IR") ?: "IR"
+            domesticCountryCode = prefs.getString("domestic_country_code", "IR") ?: "IR",
+            themeMode = prefs.getString("theme_mode", "Dark") ?: "Dark"
         )
     }
 
@@ -210,6 +212,7 @@ class VpnPreferencesStore(context: Context) {
             .putBoolean("mirrors_enabled", state.mirrorsEnabled)
             .putBoolean("strict_tls_enabled", state.strictTlsEnabled)
             .putString("domestic_country_code", state.domesticCountryCode)
+            .putString("theme_mode", state.themeMode)
             .apply()
     }
 

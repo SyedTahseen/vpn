@@ -100,14 +100,18 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.hollow.vpn.data.AppSettingsState
 import com.hollow.vpn.ui.components.CameraQrScannerDialog
 import com.hollow.vpn.ui.components.HollowBrandShieldLogo
+import com.hollow.vpn.ui.components.NothingDotMatrixBackdrop
+import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
 import com.hollow.vpn.ui.theme.HollowCreamSurface
-import com.hollow.vpn.ui.theme.HollowForest
 import com.hollow.vpn.ui.theme.HollowInk
 import com.hollow.vpn.ui.theme.HollowInkSecondary
 import com.hollow.vpn.ui.theme.HollowOrange
 import com.hollow.vpn.ui.theme.JetBrainsMonoFamily
+import com.hollow.vpn.ui.theme.NothingMatrixGreen
+import com.hollow.vpn.ui.theme.NothingSurfaceElevated
+import com.hollow.vpn.ui.theme.NothingSwitchOffBorder
 import com.hollow.vpn.ui.theme.SpaceGroteskFamily
 
 private enum class OnboardingImportSheet {
@@ -147,6 +151,7 @@ fun GettingStartedScreen(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
+        NothingDotMatrixBackdrop()
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
@@ -315,6 +320,8 @@ private fun GettingStartedWelcomeStep(
             Spacer(modifier = Modifier.height(if (isCompact) 4.dp else 10.dp))
 
             // Radar concentric rings + 3 orbital dots + centered 120dp shield mark
+            val radarDividerColor = HollowCreamDivider
+            val radarInkColor = HollowInk
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -327,13 +334,13 @@ private fun GettingStartedWelcomeStep(
                     val cy = size.height / 2f
 
                     drawCircle(
-                        color = HollowCreamDivider,
+                        color = radarDividerColor,
                         radius = 140f * scale,
                         center = Offset(cx, cy),
                         style = Stroke(width = 1.2.dp.toPx())
                     )
                     drawCircle(
-                        color = HollowCreamDivider,
+                        color = radarDividerColor,
                         radius = 104f * scale,
                         center = Offset(cx, cy),
                         style = Stroke(width = 1.2.dp.toPx())
@@ -350,7 +357,7 @@ private fun GettingStartedWelcomeStep(
 
                     // Three orbital satellite dots matching GettingStarted1 SVG (86,86), (268,98), (250,236)
                     drawCircle(
-                        color = HollowInk,
+                        color = radarInkColor,
                         radius = 7f * scale,
                         center = Offset(cx + (86f - 171f) * scale, cy + (86f - 150f) * scale)
                     )
@@ -360,7 +367,7 @@ private fun GettingStartedWelcomeStep(
                         center = Offset(cx + (268f - 171f) * scale, cy + (98f - 150f) * scale)
                     )
                     drawCircle(
-                        color = HollowInk,
+                        color = radarInkColor,
                         radius = 7f * scale,
                         center = Offset(cx + (250f - 171f) * scale, cy + (236f - 150f) * scale)
                     )
@@ -376,11 +383,11 @@ private fun GettingStartedWelcomeStep(
 
             Text(
                 text = "Private by default.",
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = if (isCompact) 28.sp else 32.sp,
-                lineHeight = if (isCompact) 31.sp else 36.sp,
-                letterSpacing = (-1.0).sp,
+                fontSize = if (isCompact) 26.sp else 30.sp,
+                lineHeight = if (isCompact) 31.sp else 35.sp,
+                letterSpacing = (-0.4).sp,
                 color = HollowInk
             )
 
@@ -444,11 +451,11 @@ private fun GettingStartedServersStep(
 
             Text(
                 text = "Bring your own servers.",
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = if (isCompact) 26.sp else 30.sp,
-                lineHeight = if (isCompact) 30.sp else 34.sp,
-                letterSpacing = (-1.0).sp,
+                fontSize = if (isCompact) 25.sp else 29.sp,
+                lineHeight = if (isCompact) 29.sp else 34.sp,
+                letterSpacing = (-0.4).sp,
                 color = HollowInk
             )
 
@@ -494,7 +501,7 @@ private fun GettingStartedServersStep(
                                 modifier = Modifier
                                     .size(20.dp)
                                     .clip(CircleShape)
-                                    .background(HollowForest),
+                                    .background(NothingMatrixGreen),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -590,7 +597,8 @@ private fun OnboardingServerOptionCard(
             .clickable(role = Role.Button, onClick = onClick)
             .testTag(testTag),
         shape = RoundedCornerShape(18.dp),
-        color = HollowCreamSurface
+        color = HollowCreamSurface,
+        border = BorderStroke(1.dp, HollowCreamDivider)
     ) {
         Row(
             modifier = Modifier
@@ -602,13 +610,14 @@ private fun OnboardingServerOptionCard(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(HollowInk),
+                    .background(NothingSurfaceElevated)
+                    .border(1.dp, HollowCreamDivider, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = HollowCream,
+                    tint = HollowInk,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -826,11 +835,11 @@ private fun GettingStartedPermissionsStep(
                 } else {
                     "One last step."
                 },
-                fontFamily = SpaceGroteskFamily,
+                fontFamily = DotoDisplayFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = if (isCompact) 24.sp else 28.sp,
-                lineHeight = if (isCompact) 28.sp else 32.sp,
-                letterSpacing = (-0.8).sp,
+                fontSize = if (isCompact) 23.sp else 26.sp,
+                lineHeight = if (isCompact) 27.sp else 31.sp,
+                letterSpacing = (-0.4).sp,
                 color = HollowInk
             )
 
@@ -868,7 +877,7 @@ private fun GettingStartedPermissionsStep(
                             modifier = Modifier
                                 .size(7.dp)
                                 .clip(CircleShape)
-                                .background(if (isVpnGranted) HollowForest else HollowOrange)
+                                .background(if (isVpnGranted) NothingMatrixGreen else HollowOrange)
                         )
                         Text(
                             text = if (isVpnGranted) {
@@ -887,7 +896,7 @@ private fun GettingStartedPermissionsStep(
                         fontFamily = JetBrainsMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
-                        color = if (verifiedCount == 5) HollowForest else HollowOrange
+                        color = if (verifiedCount == 5) NothingMatrixGreen else HollowOrange
                     )
                 }
             }
@@ -899,7 +908,7 @@ private fun GettingStartedPermissionsStep(
                 title = "VPN connection",
                 subtitle = "Required to route & encrypt all traffic",
                 badgeText = if (isVpnGranted) "GRANTED" else "REQUIRED",
-                badgeColor = if (isVpnGranted) HollowForest else HollowOrange,
+                badgeColor = if (isVpnGranted) NothingMatrixGreen else HollowOrange,
                 isChecked = isVpnGranted,
                 isPrimaryAccent = true,
                 onClick = {
@@ -914,7 +923,7 @@ private fun GettingStartedPermissionsStep(
                 title = "Always-on & kill switch",
                 subtitle = "Block connections without VPN if tunnel drops",
                 badgeText = if (killSwitchConfirmed) "ENABLED" else "GUIDE",
-                badgeColor = if (killSwitchConfirmed) HollowForest else HollowOrange,
+                badgeColor = if (killSwitchConfirmed) NothingMatrixGreen else HollowOrange,
                 isChecked = killSwitchConfirmed,
                 isPrimaryAccent = false,
                 onClick = { showKillSwitchGuide = true },
@@ -926,7 +935,7 @@ private fun GettingStartedPermissionsStep(
                 title = "Notifications",
                 subtitle = "Live speed, server & disconnect controls",
                 badgeText = if (isNotificationGranted) "GRANTED" else "ADVISED",
-                badgeColor = if (isNotificationGranted) HollowForest else HollowInkSecondary,
+                badgeColor = if (isNotificationGranted) NothingMatrixGreen else HollowInkSecondary,
                 isChecked = isNotificationGranted,
                 isPrimaryAccent = false,
                 onClick = {
@@ -946,7 +955,7 @@ private fun GettingStartedPermissionsStep(
                 title = "Unrestricted battery",
                 subtitle = "Prevent Android from stopping VPN in background",
                 badgeText = if (isBatteryUnrestricted) "ENABLED" else "ADVISED",
-                badgeColor = if (isBatteryUnrestricted) HollowForest else HollowInkSecondary,
+                badgeColor = if (isBatteryUnrestricted) NothingMatrixGreen else HollowInkSecondary,
                 isChecked = isBatteryUnrestricted,
                 isPrimaryAccent = false,
                 onClick = {
@@ -964,7 +973,7 @@ private fun GettingStartedPermissionsStep(
                 title = "Camera (QR scanner)",
                 subtitle = "Scan server & subscription QR codes",
                 badgeText = if (isCameraGranted) "GRANTED" else "OPTIONAL",
-                badgeColor = if (isCameraGranted) HollowForest else HollowInkSecondary,
+                badgeColor = if (isCameraGranted) NothingMatrixGreen else HollowInkSecondary,
                 isChecked = isCameraGranted,
                 isPrimaryAccent = false,
                 onClick = {
@@ -1090,7 +1099,7 @@ private fun PermissionGuideModalSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     ) {
         Column(
@@ -1108,13 +1117,14 @@ private fun PermissionGuideModalSheet(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(13.dp))
-                        .background(HollowInk),
+                        .background(HollowCreamSurface)
+                        .border(1.dp, HollowCreamDivider, RoundedCornerShape(13.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = HollowCream,
+                        tint = HollowInk,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -1210,7 +1220,7 @@ private fun PermissionGuideModalSheet(
             OutlinedButton(
                 onClick = onSecondaryAction,
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.2.dp, HollowInk),
+                border = BorderStroke(1.dp, HollowCreamDivider),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = HollowInk),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1255,7 +1265,7 @@ private fun PermissionChecklistRow(
         val circleBorder = when {
             isChecked -> circleBg
             isPrimaryAccent -> HollowOrange
-            else -> HollowCreamDivider
+            else -> NothingSwitchOffBorder
         }
         Box(
             modifier = Modifier
@@ -1269,7 +1279,7 @@ private fun PermissionChecklistRow(
                 Icon(
                     imageVector = Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = if (isPrimaryAccent) Color.White else HollowCream,
                     modifier = Modifier.size(14.dp)
                 )
             } else if (isPrimaryAccent) {
@@ -1333,7 +1343,7 @@ private fun OnboardingSubscriptionSheet(
     ModalBottomSheet(
         onDismissRequest = { if (!isLoading) onDismiss() },
         sheetState = sheetState,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
@@ -1480,7 +1490,7 @@ private fun OnboardingPasteConfigSheet(
     ModalBottomSheet(
         onDismissRequest = { if (!isLoading) onDismiss() },
         sheetState = sheetState,
-        containerColor = HollowCream,
+        containerColor = NothingSurfaceElevated,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
