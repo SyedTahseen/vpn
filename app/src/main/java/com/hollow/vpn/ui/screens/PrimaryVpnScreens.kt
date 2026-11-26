@@ -107,7 +107,7 @@ import com.hollow.vpn.ui.components.HollowTopSquareButton
 import com.hollow.vpn.ui.components.NothingDotMatrixBackdrop
 import com.hollow.vpn.ui.components.NothingDottedDivider
 import com.hollow.vpn.ui.components.NothingSignalDots
-import com.hollow.vpn.ui.components.countryCodeToFlagEmoji
+import com.hollow.vpn.ui.components.CountryFlag
 import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowAmber
 import com.hollow.vpn.ui.theme.HollowCream
@@ -542,10 +542,6 @@ fun SplashFetchingScreen(
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Text(
-                                                text = countryCodeToFlagEmoji(code),
-                                                fontSize = 13.sp
-                                            )
-                                            Text(
                                                 text = code,
                                                 fontFamily = JetBrainsMonoFamily,
                                                 fontWeight = FontWeight.SemiBold,
@@ -792,23 +788,6 @@ private fun DisconnectedHomeContent(
                     .heightIn(min = 6.dp)
             )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                HollowBlinkingDot(color = HollowOrange)
-                Text(
-                    text = "NOT PROTECTED",
-                    fontFamily = JetBrainsMonoFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 10.sp,
-                    letterSpacing = 1.4.sp,
-                    color = HollowOrange
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
             Text(
                 text = "YOUR IP IS VISIBLE.",
                 fontFamily = DotoDisplayFamily,
@@ -816,7 +795,7 @@ private fun DisconnectedHomeContent(
                 fontSize = if (isCompact) 21.sp else 24.sp,
                 lineHeight = if (isCompact) 25.sp else 29.sp,
                 letterSpacing = 0.5.sp,
-                color = NothingOnCanvas,
+                color = Color(0xFFD71921),
                 modifier = Modifier.testTag("connection_status_text")
             )
 
@@ -825,8 +804,6 @@ private fun DisconnectedHomeContent(
             Row(
                 modifier = Modifier
                     .heightIn(min = 34.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(role = Role.Button, onClick = onRefreshRealIp)
                     .padding(vertical = 4.dp, horizontal = 2.dp)
                     .testTag("row_real_ip"),
                 verticalAlignment = Alignment.CenterVertically,
@@ -838,12 +815,6 @@ private fun DisconnectedHomeContent(
                     fontWeight = FontWeight.Normal,
                     fontSize = 13.sp,
                     color = HollowInkSecondary
-                )
-                Icon(
-                    imageVector = Icons.Rounded.Refresh,
-                    contentDescription = "Refresh public IP",
-                    tint = HollowInkSecondary,
-                    modifier = Modifier.size(14.dp)
                 )
             }
 
@@ -892,20 +863,15 @@ private fun DisconnectedHomeContent(
                         .padding(horizontal = 14.dp, vertical = if (isCompact) 10.dp else 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(NothingSurfaceElevated)
-                            .border(1.dp, HollowCreamDivider, RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (selectedServer != null) {
-                            Text(
-                                text = countryCodeToFlagEmoji(selectedServer.countryCode),
-                                fontSize = 19.sp
-                            )
-                        } else {
+                    if (selectedServer == null) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(NothingSurfaceElevated)
+                                .border(1.dp, HollowCreamDivider, RoundedCornerShape(10.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Rounded.Add,
                                 contentDescription = null,
@@ -913,9 +879,8 @@ private fun DisconnectedHomeContent(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.width(12.dp))
                     }
-
-                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -1621,10 +1586,7 @@ fun ServerItemRowContent(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 if (showCountryBadge) {
-                    Text(
-                        text = countryCodeToFlagEmoji(server.countryCode),
-                        fontSize = 16.sp
-                    )
+                    CountryFlag(countryCode = server.countryCode, width = 22.dp, height = 15.dp)
                 }
                 Text(
                     text = if (showCountryBadge) {

@@ -438,7 +438,7 @@ fun ServerQrShareDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                CircularCountryFlag(countryCode = server.countryCode, size = 28.dp)
+                com.hollow.vpn.ui.components.CountryFlag(countryCode = server.countryCode, width = 28.dp, height = 19.dp)
                 Column {
                     Text(
                         text = server.countryName,

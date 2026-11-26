@@ -86,7 +86,7 @@ import com.hollow.vpn.ui.components.HollowTopSquareButton
 import com.hollow.vpn.ui.components.NothingDottedDivider
 import com.hollow.vpn.ui.components.NothingPillTabRow
 import com.hollow.vpn.ui.components.NothingSignalDots
-import com.hollow.vpn.ui.components.countryCodeToFlagEmoji
+import com.hollow.vpn.ui.components.CountryFlag
 import com.hollow.vpn.ui.theme.DotoDisplayFamily
 import com.hollow.vpn.ui.theme.HollowCream
 import com.hollow.vpn.ui.theme.HollowCreamDivider
@@ -540,10 +540,7 @@ fun CountryServerListScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(7.dp)
                                     ) {
-                                        Text(
-                                            text = countryCodeToFlagEmoji(fastestNode.countryCode),
-                                            fontSize = 18.sp
-                                        )
+                                        CountryFlag(countryCode = fastestNode.countryCode, width = 28.dp, height = 19.dp)
                                         Text(
                                             text = fastestNode.countryName.ifBlank { "FASTEST" }.uppercase(),
                                             fontFamily = DotoDisplayFamily,
@@ -826,10 +823,7 @@ fun CountryServerListScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text(
-                                            text = countryCodeToFlagEmoji(groupCode),
-                                            fontSize = 17.sp
-                                        )
+                                        CountryFlag(countryCode = groupCode, width = 26.dp, height = 18.dp)
                                         Text(
                                             text = country,
                                             fontFamily = SpaceGroteskFamily,
